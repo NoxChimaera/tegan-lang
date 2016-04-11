@@ -2,15 +2,16 @@
 Toy programming language
 
 ## TODO:
-- [] expressions with parentheses, l-values, r-values, etc,
-- [] arithmetics,
-- [] assignment,
-- [] if, if-else,
-- [] while, do-while,
-- [] cmp: <, >, ==, !=, <=, >=
-- [] functions: funcall, return,
-- [] basic i/o,
+Lexer:
+- [x] expressions with parentheses, l-values, r-values, etc,
+- [x] arithmetics,
+- [x] assignment,
+- [x] if, if-else,
+- [x] while, do-while,
+- [x] cmp: <, >, ==, !=, <=, >=
+- [x] functions: funcall, return,
+- [x] basic i/o,
 - [x] comments,
-- [] TYPE: int
-- [] TYPE: float
-- [] TYPE: string
+- [x] TYPE: int
+- [x] TYPE: float
+- [x] TYPE: string

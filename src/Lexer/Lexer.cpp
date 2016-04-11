@@ -15,10 +15,9 @@ Lexer::~Lexer() {
   fclose(file);
 }
 
-void Lexer::whitespace(char ch) {
-  std::cout << ch;
-  if (ch == '\n') {
-    col = 1; 
+void Lexer::whitespace(char aCh) {
+  if (aCh == '\n') {
+    col = 1;
     line++;
   } else {
     col++;
@@ -27,27 +26,144 @@ void Lexer::whitespace(char ch) {
 
 void Lexer::skipComment() {
   char ch = fgetc(file);
-  while (ch != '\n' && ch != EOF) {
+  do {
     ch = fgetc(file);
-  }
+  } while(ch != '\n' && ch != EOF);
   col = 1;
   line++;
 }
 
+Token Lexer::identifierOrKeyword(char aBegin) {
+  std::string lexeme = identifier(aBegin);
+  TokenType type = IDENTIFIER;
+
+  if (lexeme == "func") type = FUNC;
+  if (lexeme == "if") type = IF;
+  if (lexeme == "else") type = ELSE;
+  if (lexeme == "do") type = DO;
+  if (lexeme == "while") type = WHILE;
+  if (lexeme == "return") type = RETURN;
+  if (lexeme == "int") type = TYPE_INT;
+  if (lexeme == "float") type = TYPE_FLOAT;
+  if (lexeme == "string") type = TYPE_STRING;
+  if (lexeme == "print") type = IO_PRINT;
+  if (lexeme == "read") type = IO_READ;
+
+  return Token(type, lexeme, line, col - lexeme.size());
+}
+
+std::string Lexer::identifier(char aBegin) {
+  std::string buffer("");
+  buffer += aBegin;
+  col++;
+
+  char ch = fgetc(file);
+  while (isalnum(ch)) {
+    buffer += ch;
+    col++;
+    ch = fgetc(file);
+  }
+  // Return last character to stream
+  ungetc(ch, file);
+  return buffer;
+}
+
+Token Lexer::number(char aBegin) {
+  std::string buffer("");
+  buffer += aBegin;
+  col++;
+
+  TokenType type = INTEGER;
+  char ch = fgetc(file);
+  while (1) {
+    if (isdigit(ch)) {
+      buffer += ch;
+    } else if (ch == '.') {
+      type = FLOAT;
+    } else {
+      break;
+    }
+    col++;
+    ch = fgetc(file);
+  }
+  ungetc(ch, file);
+  return Token(type, buffer, line, col - buffer.size());
+}
+
 Token Lexer::lex() {
   char ch = fgetc(file);
-  // EOF
-  if (ch == EOF) {
-    return Token(EOF_TOKEN, line, col);
-  }
+
   // Whitespaces
-  while (isspace(ch)) {
-    whitespace(ch);
-  }
+  while (isspace(ch)) { whitespace(ch); ch = fgetc(file); }
   // Comments
-  if (ch == '#') {
-    skipComment();
+  if (ch == '#') { skipComment(); ch = fgetc(file); }
+  if (isalpha(ch)) { return identifierOrKeyword(ch); }
+  if (isdigit(ch)) { return number(ch); }
+
+  // Parentheses and Braces
+  if (ch == '(') { col++; return Token(PL, "(", line, col - 1); }
+  if (ch == ')') { col++; return Token(PR, ")", line, col - 1); }
+  if (ch == '{') { col++; return Token(BL, "{", line, col - 1); }
+  if (ch == '}') { col++; return Token(BR, "}", line, col - 1); }
+
+  // Punctuation
+  if (ch == ',') { col++; return Token(COMMA, ",", line, col - 1); }
+  if (ch == ';') { col++; return Token(SEMICOLON, ";", line, col - 1); }
+  if (ch == ':') { col++; return Token(COLON, ":", line, col - 1); }
+
+  // Arithmeric operators
+  if (ch == '+') { col++; return Token(ADD, "+", line, col - 1); }
+  if (ch == '-') { col++; return Token(ADD, "-", line, col - 1); }
+  if (ch == '*') { col++; return Token(MUL, "*", line, col - 1); }
+  if (ch == '/') { col++; return Token(MUL, "//", line, col - 1); }
+
+  // Comparison operators
+  if (ch == '=') {
+    char next = fgetc(file);
+    if (next == '=') {
+      col += 2;
+      return Token(CMP_EQ, "==", line, col - 2);
+    } else {
+      ungetc(next, file);
+    }
   }
-  
-  return Token(EOF_TOKEN, "Hello", line, col);
+  if (ch == '!') {
+    char next = fgetc(file);
+    if (next == '=') {
+      col += 2;
+      return Token(CMP_EQ, "!=", line, col - 2);
+    } else {
+      ungetc(next, file);
+    }
+  }
+  if (ch == '>') {
+    char next = fgetc(file);
+    if (next == '=') {
+      col += 2;
+      return Token(CMP_STEQ, ">=", line, col - 2);
+    } else {
+      ungetc(next, file);
+      col++;
+      return Token(CMP_ST, ">", line, col - 1);
+    }
+  }
+  if (ch == '<') {
+    char next = fgetc(file);
+    if (next == '=') {
+      col += 2;
+      return Token(CMP_STEQ, "<=", line, col - 2);
+    } else {
+      ungetc(next, file);
+      col++;
+      return Token(CMP_ST, "<", line, col - 1);
+    }
+  }
+
+  // Assignment
+  if (ch == '=') { col++; return Token(ASSIGN, "=", line, col - 1); }
+
+  // EOF
+  if (ch == EOF) { return Token(EOF_TOKEN, line, col); }
+  std::string str("Undefined symbol: ");
+  return Token(ERROR_TOKEN, str.append(1, ch), line, col++);
 }

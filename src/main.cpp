@@ -10,8 +10,11 @@ int main(int argc, char* argv[]) {
     std::cout << "Can't open file " << argv[1] << "\n";
     return 1;
   }
-  
+
   Lexer lexer(file);
   Token t = lexer.lex();
-  std::cout << t.getLexeme() << " (" << t.getLine() << ":" << t.getColumn() << ")\n";
+  while (t.getType() != EOF_TOKEN) {
+    std::cout << t.getLexeme() << " (" << t.getLine() << ":" << t.getColumn() << ")\n";
+    t = lexer.lex();
+  }
 }
