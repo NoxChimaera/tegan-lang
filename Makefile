@@ -1,2 +1,2 @@
 all:
-	g++ src/main.cpp src/Lexer/* -o dist/hello
+	g++ src/main.cpp src/Lexer/* src/Parser/AST/* -o dist/hello
