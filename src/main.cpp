@@ -13,18 +13,17 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  VarNode node("foobar");
+  VarNode* left = new VarNode("foobar");
+  IntegerNode* forty_two = new IntegerNode(42);
+  IntegerNode* thirty_five = new IntegerNode(35);
+  BinaryNode* plus = new BinaryNode('+', forty_two, thirty_five);
+
+  AssignmentNode assign(left, plus);
+
   Printer printer = Printer();
-  node.accept(printer);
+  assign.accept(printer);
 
-  // printer.visit(node);
-
-
-  // VarNode node("foo");
-  // std::cout << node.getName() << std::endl;
-
-
-
+  // -======= Print tokens =======-
   // Lexer lexer(file);
   // Token t = lexer.lex();
   //
