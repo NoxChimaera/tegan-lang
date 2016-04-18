@@ -35,7 +35,7 @@ void Lexer::skipComment() {
 
 Token Lexer::identifierOrKeyword(char aBegin) {
   std::string lexeme = identifier(aBegin);
-  TokenType type = IDENTIFIER;
+  TokenType type = SYMBOL;
 
   if (lexeme == "func") type = FUNC;
   if (lexeme == "if") type = IF;
@@ -43,9 +43,9 @@ Token Lexer::identifierOrKeyword(char aBegin) {
   if (lexeme == "do") type = DO;
   if (lexeme == "while") type = WHILE;
   if (lexeme == "return") type = RETURN;
-  if (lexeme == "int") type = TYPE_INT;
-  if (lexeme == "float") type = TYPE_FLOAT;
-  if (lexeme == "string") type = TYPE_STRING;
+  if (lexeme == "int") type = TYPE;
+  if (lexeme == "float") type = TYPE;
+  if (lexeme == "string") type = TYPE;
   if (lexeme == "print") type = IO_PRINT;
   if (lexeme == "read") type = IO_READ;
 
@@ -94,9 +94,24 @@ Token Lexer::lex() {
   char ch = fgetc(file);
 
   // Whitespaces
-  while (isspace(ch)) { whitespace(ch); ch = fgetc(file); }
+  while (isspace(ch)) {
+    whitespace(ch); ch = fgetc(file);
+  }
   // Comments
-  if (ch == '#') { skipComment(); ch = fgetc(file); }
+  while (ch == '#') {
+    // std::cout << "lex: comment at ("
+    //   << line << ":" << col << ")"  << std::endl;
+    skipComment(); ch = fgetc(file);
+  }
+  // Whitespaces after comment
+  while (isspace(ch)) {
+    whitespace(ch); ch = fgetc(file);
+  }
+  // EOF after comment
+  if (ch == EOF) { return Token(EOF_TOKEN, line, col); }
+
+  // std::cout << "lex?: " << ch << " at ("
+  //   << line << ":" << col << ")"  << std::endl;
   if (isalpha(ch)) { return identifierOrKeyword(ch); }
   if (isdigit(ch)) { return number(ch); }
 

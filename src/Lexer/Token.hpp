@@ -4,7 +4,7 @@ enum TokenType {
   EOF_TOKEN,
   ERROR_TOKEN,
 
-  IDENTIFIER,
+  SYMBOL,
   INTEGER, FLOAT,
 
   ADD, MUL,
@@ -20,7 +20,7 @@ enum TokenType {
   PL, PR, BL, BR,
   COMMA, SEMICOLON, COLON,
 
-  TYPE_INT, TYPE_FLOAT, TYPE_STRING
+  TYPE
 };
 
 class Token {
@@ -29,6 +29,7 @@ public:
   Token(TokenType aType, int line, int col);
   TokenType getType();
   std::string getLexeme();
+  static std::string showType(TokenType aType);
   int getLine();
   int getColumn();
 

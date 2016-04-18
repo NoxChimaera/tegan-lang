@@ -18,8 +18,13 @@ int main(int argc, char* argv[]) {
   Node* node = parser.parse(file);
 
   Printer printer = Printer();
-  node->accept(printer);
-  std::cout << std::endl;
+
+  if (node != NULL) {
+    node->accept(printer);
+  } else {
+    std::cout << "EXIT" << std::endl;
+  }
+  std::cout << std::endl << std::endl << std::endl;
 
   // -======= Print tokens =======-
   // Lexer lexer(file);

@@ -38,7 +38,12 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
-class VarNode : public Node {
+class ExpressionNode : public Node {
+public:
+  virtual void accept(ASTVisitor& aVisitor) = 0;
+};
+
+class VarNode : public ExpressionNode {
 private:
   std::string name;
 public:
@@ -49,7 +54,7 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
-class IntegerNode : public Node {
+class IntegerNode : public ExpressionNode {
 private:
   int value;
 public:
@@ -60,7 +65,7 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
-class FloatNode : public Node {
+class FloatNode : public ExpressionNode {
 private:
   float value;
 public:
@@ -71,21 +76,7 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
-class AssignmentNode : public Node {
-private:
-  VarNode* lhs;
-  Node* rhs;
-public:
-  AssignmentNode(VarNode* aVariable, Node* aRHS)
-    : lhs(aVariable), rhs(aRHS) {
-    type = rhs->getType();
-  }
-  VarNode* getLHS() { return lhs; }
-  Node* getRHS() { return rhs; }
-  void accept(ASTVisitor& aVisitor);
-};
-
-class BinaryNode : public Node {
+class BinaryNode : public ExpressionNode {
 private:
   char op;
   Node* lhs;
@@ -101,21 +92,57 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
+class StatementNode : public Node {
+public:
+  virtual void accept(ASTVisitor& aVisitor) = 0;
+};
+
+
+class AssignmentNode : public StatementNode {
+private:
+  VarNode* lhs;
+  ExpressionNode* rhs;
+public:
+  AssignmentNode(VarNode* aVariable, ExpressionNode* aRHS)
+    : lhs(aVariable), rhs(aRHS) {
+    type = rhs->getType();
+  }
+  VarNode* getLHS() { return lhs; }
+  ExpressionNode* getRHS() { return rhs; }
+  void accept(ASTVisitor& aVisitor);
+};
+
+class BlockStatementNode : public StatementNode {
+private:
+  std::vector<StatementNode*> statements;
+public:
+  BlockStatementNode(
+    std::vector<StatementNode*> aStatements
+  ) : statements(aStatements) {
+    type = Type::UNDEFINED;
+  }
+  std::vector<StatementNode*> getStatements() { return statements; }
+  void insert(StatementNode* aNode) {
+    statements.push_back(aNode);
+  }
+  void accept(ASTVisitor& aVisitor);
+};
+
 class FunctionDefNode : public Node {
 private:
   std::string name;
-  std::vector<VarNode> args;
-  Node* body;
+  std::vector<VarNode*> args;
+  StatementNode* body;
 public:
   FunctionDefNode(
-    std::string aName/*, std::vector<VarNode> aArgs*/,
-    Node* aBody, Type aType
-  ) : name(aName), /*args(aArgs),*/ body(aBody) {
+    std::string aName, std::vector<VarNode*> aArgs,
+    StatementNode* aBody, Type aType
+  ) : name(aName), args(aArgs), body(aBody) {
     type = aType;
   }
   std::string getName() { return name; }
-  std::vector<VarNode> getArgs() { return args; }
-  Node* getBody() { return body; }
+  std::vector<VarNode*> getArgs() { return args; }
+  StatementNode* getBody() { return body; }
   void accept(ASTVisitor& aVisitor);
 };
 
