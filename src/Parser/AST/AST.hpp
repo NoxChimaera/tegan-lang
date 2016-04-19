@@ -78,17 +78,18 @@ public:
 
 class BinaryNode : public ExpressionNode {
 private:
-  char op;
-  Node* lhs;
-  Node* rhs;
+  std::string op;
+  ExpressionNode* lhs;
+  ExpressionNode* rhs;
 public:
-  BinaryNode(char aOp, Node* aLHS, Node* aRHS)
-    : op(aOp), lhs(aLHS), rhs(aRHS) {
+  BinaryNode(
+    std::string aOp, ExpressionNode* aLHS, ExpressionNode* aRHS
+  ) : op(aOp), lhs(aLHS), rhs(aRHS) {
     type = Type::UNDEFINED;
   }
-  char getOp() { return op; }
-  Node* getLHS() { return lhs; }
-  Node* getRHS() { return rhs; }
+  std::string getOp() { return op; }
+  ExpressionNode* getLHS() { return lhs; }
+  ExpressionNode* getRHS() { return rhs; }
   void accept(ASTVisitor& aVisitor);
 };
 

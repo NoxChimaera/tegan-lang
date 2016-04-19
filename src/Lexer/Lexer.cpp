@@ -155,22 +155,42 @@ Token Lexer::lex() {
     char next = fgetc(file);
     if (next == '=') {
       col += 2;
-      return Token(CMP_STEQ, ">=", line, col - 2);
+      return Token(CMP, ">=", line, col - 2);
     } else {
       ungetc(next, file);
       col++;
-      return Token(CMP_ST, ">", line, col - 1);
+      return Token(CMP, ">", line, col - 1);
     }
   }
   if (ch == '<') {
     char next = fgetc(file);
     if (next == '=') {
       col += 2;
-      return Token(CMP_STEQ, "<=", line, col - 2);
+      return Token(CMP, "<=", line, col - 2);
     } else {
       ungetc(next, file);
       col++;
-      return Token(CMP_ST, "<", line, col - 1);
+      return Token(CMP, "<", line, col - 1);
+    }
+  }
+  if (ch == '&') {
+    char next = fgetc(file);
+    if (next == '&') {
+      col += 2;
+      return Token(LAND, "&&", line, col - 2);
+    } else {
+      col++;
+      ungetc(next, file);
+    }
+  }
+  if (ch == '|') {
+    char next = fgetc(file);
+    if (next == '|') {
+      col += 2;
+      return Token(LAND, "||", line, col - 2);
+    } else {
+      col++;
+      ungetc(next, file);
     }
   }
 

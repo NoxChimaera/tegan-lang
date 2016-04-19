@@ -77,6 +77,7 @@ public:
     std::cout << " {";
     for (StatementNode* node : aNode.getStatements()) {
       node->accept((*this));
+      std::cout << ";";
     }
     std::cout << " }";
   }
