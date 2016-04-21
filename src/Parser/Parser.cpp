@@ -76,7 +76,7 @@ FunctionDefNode* Parser::functionDef() {
   if (type == Type::UNDEFINED) {
     std::cout << "WARN: undefined type" << std::endl;
   }
-
+  next();
   StatementNode* body = statement();
   if (body == NULL) { return NULL; }
 
@@ -95,14 +95,58 @@ std::vector<VarNode*> Parser::functionArgs() {
 // statement := <block> | <expression> | <compound-statement>
 StatementNode* Parser::statement() {
   infoln("debug?: parsing <statement>");
-  switch (next().getType()) {
+  lexinfo(current.getLexeme(), current.getType());
+  switch (current.getType()) {
     case EOF_TOKEN: return NULL;
-    case BL: return blockStatement();
+    case BL: { /*next();*/ return blockStatement(); }
+    case IF: return ifStatement();
+    case TYPE: {
+      StatementNode* stmt = assignment();
+      if (!is(current, SEMICOLON)) { return NULL; }
+      next();
+      return stmt;
+    }
   }
   return NULL;
 }
 
+// if-stmt := If \( <expression : int> \) <statement>
+//   ( Else <statement> )?
+IfStatementNode* Parser::ifStatement() {
+  infoln("debug?: parsing <if-stmt>");
+  // if (!is(next(), PL)) { return NULL; }
+  ExpressionNode* cond = expression();
+  if (cond == NULL) { return NULL; }
+
+  infoln("debug?: parsing <if-stmt.true>");
+  StatementNode* trueBranch = statement();
+  if (trueBranch == NULL) { return NULL; }
+  if (is(current, ELSE, true)) {
+    infoln("debug?: parsing <if-stmt.false>");
+    StatementNode* falseBranch = statement();
+    if (falseBranch == NULL) { return NULL; }
+    return new IfStatementNode(cond, trueBranch, falseBranch);
+  }
+  return new IfStatementNode(cond, trueBranch);
+}
+
+
 // block := { <statement>* }
+// BlockStatementNode* Parser::blockStatement() {
+//   infoln("debug?: parsing <block>");
+//   std::vector<StatementNode*> statements = std::vector<StatementNode*>();
+//   while(!is(current, BR, true)) {
+//     lexinfo(current.getLexeme());
+//     StatementNode* node = statement();
+//     if (node == NULL) { return NULL; }
+//     statements.push_back(node);
+//     next();
+//   }
+//   next();
+//   return new BlockStatementNode(
+//     statements
+//   );
+// }
 BlockStatementNode* Parser::blockStatement() {
   infoln("debug?: parsing <block>");
   std::vector<StatementNode*> statements = std::vector<StatementNode*>();
@@ -113,10 +157,12 @@ BlockStatementNode* Parser::blockStatement() {
       case TYPE: {
         AssignmentNode* node = assignment();
         if (node == NULL) return NULL;
+        if (!is(current, SEMICOLON)) { return NULL; }
         statements.push_back(node);
       }
     }
   }
+  next();
   return new BlockStatementNode(
     statements
   );
@@ -131,10 +177,11 @@ AssignmentNode* Parser::assignment() {
   VarNode* lhs = new VarNode(current.getLexeme(), type);
   if (!is(next(), ASSIGN)) { return NULL; }
 
-  // next();
   ExpressionNode* rhs = expression();
+
   if (rhs == NULL) { return NULL; }
 
+  infoln("debug!: parsed <assignment>");
   return new AssignmentNode(lhs, rhs);
 }
 
@@ -146,15 +193,14 @@ ExpressionNode* Parser::expression() {
     case EOF_TOKEN: return NULL;
   }
   ExpressionNode* node = lor();
-  if (!is(current, SEMICOLON)) { return NULL; }
   return node;
 }
 
-// lor := <land> LOr <lor>
+// lor := <land> (LOr <lor : int>)?
 ExpressionNode* Parser::lor() {
   ExpressionNode* node = land();
   // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == LOR) {
+  if (is(current, LOR, true)) {
     infoln("debug?: parsing <lor>");
     std::string op = current.getLexeme();
     next();
@@ -166,11 +212,10 @@ ExpressionNode* Parser::lor() {
   return node;
 }
 
-// land := <cmpeq> LAnd <land>
+// land := <cmpeq> (LAnd <land : int>)?
 ExpressionNode* Parser::land() {
   ExpressionNode* node = cmpeq();
-  // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == LAND) {
+  if (is(current, LAND, true)) {
     infoln("debug?: parsing <land>");
     std::string op = current.getLexeme();
     next();
@@ -182,11 +227,11 @@ ExpressionNode* Parser::land() {
   return node;
 }
 
-// cmpeq := <cmp> Eq <cmpeq>
+// cmpeq := <cmp> (Eq <cmpeq>)?
 ExpressionNode* Parser::cmpeq() {
   ExpressionNode* node = cmp();
   // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == CMP_EQ) {
+  if (is(current, CMP_EQ, true)) {
     infoln("debug?: parsing <cmpeq>");
     std::string op = current.getLexeme();
     next();
@@ -198,11 +243,11 @@ ExpressionNode* Parser::cmpeq() {
   return node;
 }
 
-// cmp := <add> Cmp <cmp>
+// cmp := <add> (Cmp <cmp>)?
 ExpressionNode* Parser::cmp() {
   ExpressionNode* node = additive();
   // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == CMP) {
+  if (is(current, CMP, true)) {
     infoln("debug?: parsing <cmp>");
     std::string op = current.getLexeme();
     next();
@@ -214,11 +259,11 @@ ExpressionNode* Parser::cmp() {
   return node;
 }
 
-// add := <mul> Add <add>
+// add := <mul> (Add <add>)?
 ExpressionNode* Parser::additive() {
   ExpressionNode* node = multiplicative();
   // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == ADD) {
+  if (is(current, ADD, true)) {
     infoln("debug?: parsing <add>");
     std::string op = current.getLexeme();
     next();
@@ -230,11 +275,11 @@ ExpressionNode* Parser::additive() {
   return node;
 }
 
-// mul := <unary> Mul <mul>
+// mul := <unary> (Mul <mul>)?
 ExpressionNode* Parser::multiplicative() {
   ExpressionNode* node = unary();
   // lexinfo(current.getLexeme(), current.getType());
-  if (current.getType() == MUL) {
+  if (is(current, MUL, true)) {
     infoln("debug?: parsing <mul>");
     std::string op = current.getLexeme();
     next();
@@ -246,20 +291,27 @@ ExpressionNode* Parser::multiplicative() {
   return node;
 }
 
-// unary := UnaryOperator <factor>
+// unary := UnaryOperator? <factor>
 ExpressionNode* Parser::unary() {
   infoln("debug?: parsing unary");
+  if (is(current, ADD, true) || is(current, NOT, true)) {
+    std::string op = current.getLexeme();
+      next();
+      ExpressionNode* exp = unary();
+      if (exp == NULL) { return NULL; }
+      return new UnaryNode(op, exp);
+  }
   ExpressionNode* node = factor();
   return node;
 }
 
-// factor := <constant> | ( <expression> )
+// factor := <constant> | \( <expression> \)
 ExpressionNode* Parser::factor() {
   infoln("debug?: parsing factor");
   if (is(current, PL, true)) {
     infoln("lex!: PL");
     next();
-    ExpressionNode* expr = additive();
+    ExpressionNode* expr = lor();
     if (!is(current, PR)) { return NULL; }
     next();
     return expr;

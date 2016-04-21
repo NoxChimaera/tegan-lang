@@ -37,6 +37,7 @@ private:
   std::vector<VarNode*> functionArgs();
   StatementNode* statement();
   BlockStatementNode* blockStatement();
+  IfStatementNode* ifStatement();
 
   AssignmentNode* assignment();
   ExpressionNode* expression();

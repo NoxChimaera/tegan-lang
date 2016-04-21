@@ -102,11 +102,12 @@ Token Lexer::lex() {
     // std::cout << "lex: comment at ("
     //   << line << ":" << col << ")"  << std::endl;
     skipComment(); ch = fgetc(file);
+    // Whitespaces after comment
+    while (isspace(ch)) {
+      whitespace(ch); ch = fgetc(file);
+    }
   }
-  // Whitespaces after comment
-  while (isspace(ch)) {
-    whitespace(ch); ch = fgetc(file);
-  }
+
   // EOF after comment
   if (ch == EOF) { return Token(EOF_TOKEN, line, col); }
 
@@ -149,6 +150,8 @@ Token Lexer::lex() {
       return Token(CMP_EQ, "!=", line, col - 2);
     } else {
       ungetc(next, file);
+      col++;
+      return Token(NOT, "!", line, col - 1);
     }
   }
   if (ch == '>') {

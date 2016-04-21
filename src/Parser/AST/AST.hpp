@@ -93,11 +93,25 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
+class UnaryNode : public ExpressionNode {
+private:
+  std::string op;
+  ExpressionNode* subexpr;
+public:
+  UnaryNode(
+    std::string aOp, ExpressionNode* aSubexpr
+  ) : op(aOp), subexpr(aSubexpr) {
+    type = aSubexpr->getType();
+  }
+  std::string getOp() { return op; }
+  ExpressionNode* getSubexpr() { return subexpr; }
+  void accept(ASTVisitor& aVisitor);
+};
+
 class StatementNode : public Node {
 public:
   virtual void accept(ASTVisitor& aVisitor) = 0;
 };
-
 
 class AssignmentNode : public StatementNode {
 private:
@@ -120,12 +134,29 @@ public:
   BlockStatementNode(
     std::vector<StatementNode*> aStatements
   ) : statements(aStatements) {
-    type = Type::UNDEFINED;
+    type = Type::UNDEFINED; // type = type-of-last-statement
   }
   std::vector<StatementNode*> getStatements() { return statements; }
   void insert(StatementNode* aNode) {
     statements.push_back(aNode);
   }
+  void accept(ASTVisitor& aVisitor);
+};
+
+class IfStatementNode : public StatementNode {
+private:
+  ExpressionNode* cond;
+  StatementNode* trueBranch;
+  StatementNode* falseBranch;
+public:
+  IfStatementNode(
+    ExpressionNode* aCond, StatementNode* aTrueBranch, StatementNode* aFalseBranch = NULL
+  ) : cond(aCond), trueBranch(aTrueBranch), falseBranch(aFalseBranch) {
+    type == Type::UNDEFINED;
+  }
+  ExpressionNode* getCond() { return cond; }
+  StatementNode* getTrueBranch() { return trueBranch; }
+  StatementNode* getFalseBranch() { return falseBranch; }
   void accept(ASTVisitor& aVisitor);
 };
 

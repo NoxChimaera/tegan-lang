@@ -44,9 +44,9 @@ public:
     std::cout << " ["<< aNode.getValue() << "F]";
   }
 
-  // <variable> = <expression>
+  // (Assign <variable> <expression>)
   void visit(AssignmentNode aNode) {
-    std::cout << " (assign ";
+    std::cout << " (Assign ";
     aNode.getLHS()->accept((*this));
     aNode.getRHS()->accept((*this));
     std::cout << ")";
@@ -60,9 +60,16 @@ public:
     std::cout << ")";
   }
 
-  // (func <name> : ( [arg]* ) -> <type> <body>)
+  // (<operator> <subexpr>)
+  void visit(UnaryNode aNode) {
+    std::cout << " (" << aNode.getOp() << " ";
+    aNode.getSubexpr()->accept((*this));
+    std::cout << ")";
+  }
+
+  // (Func <name> : ( [arg]* ) -> <type> <body>)
   void visit(FunctionDefNode aNode) {
-    std::cout << " (func " << aNode.getName() << " : (";
+    std::cout << " (Func " << aNode.getName() << " : (";
     for (VarNode* node : aNode.getArgs()) {
       node->accept((*this));
     }
@@ -80,5 +87,18 @@ public:
       std::cout << ";";
     }
     std::cout << " }";
+  }
+
+  // (If <expression> <statement> (Else <statement>)?
+  void visit(IfStatementNode aNode) {
+    std::cout << " (If ";
+    aNode.getCond()->accept((*this));
+    aNode.getTrueBranch()->accept((*this));
+    StatementNode* falseBranch = aNode.getFalseBranch();
+    if (falseBranch != NULL) {
+      std::cout << " Else ";
+      falseBranch->accept((*this));
+    }
+    std::cout << " )";
   }
 };

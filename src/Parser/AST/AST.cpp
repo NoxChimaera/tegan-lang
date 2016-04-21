@@ -30,9 +30,16 @@ void BinaryNode::accept(ASTVisitor& aVisitor) {
   aVisitor.visit((*this));
 }
 
+void UnaryNode::accept(ASTVisitor& aVisitor) {
+  aVisitor.visit((*this));
+}
+
 void FunctionDefNode::accept(ASTVisitor& aVisitor) {
   aVisitor.visit((*this));
 }
 void BlockStatementNode::accept(ASTVisitor& aVisitor) {
+  aVisitor.visit((*this));
+}
+void IfStatementNode::accept(ASTVisitor& aVisitor) {
   aVisitor.visit((*this));
 }

@@ -8,7 +8,7 @@ enum TokenType {
   INTEGER, FLOAT,
 
   ADD, MUL,
-  LAND, LOR,
+  LAND, LOR, NOT,
   ASSIGN,
   CMP, CMP_EQ,
 
