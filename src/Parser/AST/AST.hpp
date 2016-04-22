@@ -54,6 +54,21 @@ public:
   void accept(ASTVisitor& aVisitor);
 };
 
+class FuncallNode : public ExpressionNode {
+private:
+  std::string name;
+  std::vector<ExpressionNode*> args;
+public:
+  FuncallNode(
+    std::string aName, std::vector<ExpressionNode*> aArgs, Type aType
+  ) : name(aName), args(aArgs) {
+    type = aType;
+  }
+  std::string getName() { return name; }
+  std::vector<ExpressionNode*> getArgs() { return args; }
+  void accept(ASTVisitor& aVisitor);
+};
+
 class IntegerNode : public ExpressionNode {
 private:
   int value;
@@ -111,6 +126,18 @@ public:
 class StatementNode : public Node {
 public:
   virtual void accept(ASTVisitor& aVisitor) = 0;
+};
+
+class ExpressionWrapperNode : public StatementNode {
+private:
+  ExpressionNode* expression;
+public:
+  ExpressionWrapperNode(ExpressionNode* aExpr)
+    : expression(aExpr) {
+    type = aExpr->getType();
+  }
+  ExpressionNode* getExpr() { return expression; }
+  virtual void accept(ASTVisitor& aVisitor);
 };
 
 class AssignmentNode : public StatementNode {

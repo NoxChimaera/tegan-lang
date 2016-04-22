@@ -9,6 +9,8 @@ public:
   virtual void visit(DummyNode aNode) = 0;
 
   virtual void visit(VarNode aNode) = 0;
+  virtual void visit(FuncallNode) = 0;
+
   virtual void visit(IntegerNode aNode) = 0;
   virtual void visit(FloatNode aNode) = 0;
   virtual void visit(BinaryNode aNode) = 0;
@@ -18,6 +20,7 @@ public:
   virtual void visit(FunctionDefNode aNode) = 0;
   virtual void visit(BlockStatementNode aNode) = 0;
   virtual void visit(IfStatementNode aNode) = 0;
+  virtual void visit(ExpressionWrapperNode aNode) = 0;
 };
 
 #endif

@@ -3,14 +3,10 @@
 #include "Token.hpp"
 
 class Lexer {
-public:
-  Lexer(FILE* aFile);
-  ~Lexer();
-  Token lex();
-
 private:
   FILE* file;
   int line, col;
+  Token saved;
 
   void whitespace(char aCh);
   void skipComment();
@@ -19,4 +15,14 @@ private:
   std::string identifier(char aBegin);
 
   Token number(char aBegin);
+
+public:
+  Lexer(FILE* aFile) : saved(EOF_TOKEN, 0, 0) {
+    file = aFile;
+    line = 1;
+    col = 1;
+  }
+  ~Lexer();
+  Token lex();
+  void unlex(Token token);
 };

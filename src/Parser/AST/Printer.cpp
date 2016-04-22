@@ -67,6 +67,16 @@ public:
     std::cout << ")";
   }
 
+  // (Call <name> : ( [arg]* ) -> <type>)
+  void visit(FuncallNode aNode) {
+    std::cout << " (Call " << aNode.getName() << " : (";
+    for (ExpressionNode* node : aNode.getArgs()) {
+      node->accept((*this));
+    }
+    std::cout << " ) -> " << show(aNode.getType())
+      << ")";
+  }
+
   // (Func <name> : ( [arg]* ) -> <type> <body>)
   void visit(FunctionDefNode aNode) {
     std::cout << " (Func " << aNode.getName() << " : (";
@@ -100,5 +110,10 @@ public:
       falseBranch->accept((*this));
     }
     std::cout << " )";
+  }
+
+  // <expression>
+  void visit(ExpressionWrapperNode aNode) {
+    aNode.getExpr()->accept((*this));
   }
 };

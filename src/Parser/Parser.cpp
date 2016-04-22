@@ -93,6 +93,7 @@ std::vector<VarNode*> Parser::functionArgs() {
 }
 
 // statement := <block> | <expression> | <compound-statement>
+// @implicit nullable
 StatementNode* Parser::statement() {
   infoln("debug?: parsing <statement>");
   lexinfo(current.getLexeme(), current.getType());
@@ -102,9 +103,13 @@ StatementNode* Parser::statement() {
     case IF: return ifStatement();
     case TYPE: {
       StatementNode* stmt = assignment();
-      if (!is(current, SEMICOLON)) { return NULL; }
-      next();
+      if (is(current, SEMICOLON, true)) { next(); }
       return stmt;
+    }
+    case SYMBOL: {
+      ExpressionWrapperNode* node = _funcall();
+      if (is(current, SEMICOLON, true)) { next(); }
+      return node;
     }
   }
   return NULL;
@@ -123,6 +128,7 @@ IfStatementNode* Parser::ifStatement() {
   if (trueBranch == NULL) { return NULL; }
   if (is(current, ELSE, true)) {
     infoln("debug?: parsing <if-stmt.false>");
+    next();
     StatementNode* falseBranch = statement();
     if (falseBranch == NULL) { return NULL; }
     return new IfStatementNode(cond, trueBranch, falseBranch);
@@ -132,37 +138,22 @@ IfStatementNode* Parser::ifStatement() {
 
 
 // block := { <statement>* }
-// BlockStatementNode* Parser::blockStatement() {
-//   infoln("debug?: parsing <block>");
-//   std::vector<StatementNode*> statements = std::vector<StatementNode*>();
-//   while(!is(current, BR, true)) {
-//     lexinfo(current.getLexeme());
-//     StatementNode* node = statement();
-//     if (node == NULL) { return NULL; }
-//     statements.push_back(node);
-//     next();
-//   }
-//   next();
-//   return new BlockStatementNode(
-//     statements
-//   );
-// }
 BlockStatementNode* Parser::blockStatement() {
   infoln("debug?: parsing <block>");
-  std::vector<StatementNode*> statements = std::vector<StatementNode*>();
-  while(!is(next(), BR, true)) {
-    switch (current.getType()) {
-      case EOF_TOKEN: is(current, BR); return NULL;
-      // TODO: parse statement?
-      case TYPE: {
-        AssignmentNode* node = assignment();
-        if (node == NULL) return NULL;
-        if (!is(current, SEMICOLON)) { return NULL; }
-        statements.push_back(node);
-      }
-    }
-  }
   next();
+  std::vector<StatementNode*> statements = std::vector<StatementNode*>();
+  while(!is(current, BR, true)) {
+    lexinfo(current.getLexeme());
+    if (current.getType() == EOF_TOKEN) {
+      is(current, BR);
+      return NULL;
+    }
+
+    StatementNode* node = statement();
+    if (node == NULL) { return NULL; }
+    statements.push_back(node);
+  }
+  next(); // skip `}`
   return new BlockStatementNode(
     statements
   );
@@ -180,7 +171,7 @@ AssignmentNode* Parser::assignment() {
   ExpressionNode* rhs = expression();
 
   if (rhs == NULL) { return NULL; }
-
+  lexinfo(current);
   infoln("debug!: parsed <assignment>");
   return new AssignmentNode(lhs, rhs);
 }
@@ -293,8 +284,8 @@ ExpressionNode* Parser::multiplicative() {
 
 // unary := UnaryOperator? <factor>
 ExpressionNode* Parser::unary() {
-  infoln("debug?: parsing unary");
   if (is(current, ADD, true) || is(current, NOT, true)) {
+    infoln("debug?: parsing <unary>");
     std::string op = current.getLexeme();
       next();
       ExpressionNode* exp = unary();
@@ -307,7 +298,7 @@ ExpressionNode* Parser::unary() {
 
 // factor := <constant> | \( <expression> \)
 ExpressionNode* Parser::factor() {
-  infoln("debug?: parsing factor");
+  infoln("debug?: parsing <factor>");
   if (is(current, PL, true)) {
     infoln("lex!: PL");
     next();
@@ -315,18 +306,63 @@ ExpressionNode* Parser::factor() {
     if (!is(current, PR)) { return NULL; }
     next();
     return expr;
+  } else if (is(current, SYMBOL, true)) {
+    Token tmp = current;
+    Token lookup = next();
+    if (is(lookup, PL, true)) {
+      unlex(lookup);
+      current = tmp;
+      return funcall();
+    }
+    unlex(lookup);
+    current = tmp;
+    return var();
   }
   return constant();
 }
 
-// constant := <float> | <integer>
+// constant := <float> | <integer> | <var>
 ExpressionNode* Parser::constant() {
-  infoln("debug?: parsing constant");
+  infoln("debug?: parsing <constant>");
   switch (current.getType()) {
     case INTEGER: return intgr();
     case FLOAT: return flt();
   }
   return NULL;
+}
+
+// var := Symbol | Symbol \( <funcall-args> \)
+VarNode* Parser::var() {
+  // TODO: lookup symbol table
+  infoln("debug?: parsing <var>");
+  std::string name = current.getLexeme();
+  next();
+  return new VarNode(name, Type::UNDEFINED);
+}
+
+ExpressionWrapperNode* Parser::_funcall() {
+  FuncallNode* node = funcall();
+  if (node == NULL) { return NULL; }
+  return new ExpressionWrapperNode(node);
+}
+
+// funcall := Symbol \( <funcall-args> \)
+FuncallNode* Parser::funcall() {
+  infoln("debug?: parsing <funcall>");
+  std::string name = current.getLexeme();
+  if (!is(next(), PL)) {
+    return NULL;
+  }
+  std::vector<ExpressionNode*> args = funcallArgs();
+  next();
+  return new FuncallNode(name, args, Type::UNDEFINED);
+}
+
+// funcall-args := <expression>*
+std::vector<ExpressionNode*> Parser::funcallArgs() {
+  infoln("debug?: parsing <funcall-args>");
+  while (!is(next(), PR, true));
+  return std::vector<ExpressionNode*>();
 }
 
 // integer := Integer

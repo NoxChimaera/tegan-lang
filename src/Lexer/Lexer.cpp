@@ -5,11 +5,12 @@
 
 #include "Lexer.hpp"
 
-Lexer::Lexer(FILE* aFile) {
-  file = aFile;
-  line = 1;
-  col = 1;
-}
+// Lexer::Lexer(FILE* aFile) {
+//   file = aFile;
+//   line = 1;
+//   col = 1;
+//   saved = NULL;
+// }
 
 Lexer::~Lexer() {
   fclose(file);
@@ -91,6 +92,12 @@ Token Lexer::number(char aBegin) {
 }
 
 Token Lexer::lex() {
+  if (saved.getType() != EOF_TOKEN) {
+    Token t = saved;
+    saved = Token(EOF_TOKEN, 0, 0);
+    return t;
+  }
+
   char ch = fgetc(file);
 
   // Whitespaces
@@ -204,4 +211,8 @@ Token Lexer::lex() {
   if (ch == EOF) { return Token(EOF_TOKEN, line, col); }
   std::string str("Undefined symbol: ");
   return Token(ERROR_TOKEN, str.append(1, ch), line, col++);
+}
+
+void Lexer::unlex(Token token) {
+  saved = token;
 }

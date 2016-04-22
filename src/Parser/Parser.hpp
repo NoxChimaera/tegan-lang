@@ -10,6 +10,7 @@ private:
   bool isDebugMode;
 
   Token next() { return current = lexer->lex(); }
+  void unlex(Token token) { lexer->unlex(token); }
   bool is(Token aToken, TokenType aExpectedType, bool suppress = false);
   Type fromString(std::string type);
 
@@ -32,9 +33,20 @@ private:
      std::cout << "lex!: " << lexeme << " of "
        << Token::showType(type) << std::endl;
   }
+  void lexinfo(Token token) {
+    std::cout << "lex!: " << token.getLexeme() << " of "
+      << Token::showType(token.getType()) << " at ("
+      << token.getLine() << ":" << token.getColumn() << ")"
+      << std::endl;
+  }
 
   FunctionDefNode* functionDef();
   std::vector<VarNode*> functionArgs();
+
+  ExpressionWrapperNode* _funcall();
+  FuncallNode* funcall();
+  std::vector<ExpressionNode*> funcallArgs();
+
   StatementNode* statement();
   BlockStatementNode* blockStatement();
   IfStatementNode* ifStatement();
@@ -50,8 +62,10 @@ private:
   ExpressionNode* unary();
   ExpressionNode* factor();
   ExpressionNode* constant();
+
   IntegerNode* intgr();
   FloatNode* flt();
+  VarNode* var();
 
 public:
   Parser() : current(EOF_TOKEN, 0, 0) {
