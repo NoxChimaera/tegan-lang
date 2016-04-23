@@ -1,2 +1,2 @@
 all:
-	g++ src/main.cpp src/Lexer/* src/Parser/AST/* src/Compiler/* src/Parser/Parser.* -o dist/hello -std=c++11
+	clang++ src/main.cpp src/Lexer/*.cpp src/Parser/AST/*.cpp src/Parser/Parser.cpp -o dist/hello -std=c++11 -Wno-switch

@@ -99,15 +99,28 @@ StatementNode* Parser::statement() {
   lexinfo(current.getLexeme(), current.getType());
   switch (current.getType()) {
     case EOF_TOKEN: return NULL;
-    case BL: { /*next();*/ return blockStatement(); }
-    case IF: return ifStatement();
+    case BL: { return blockStatement(); }
+    case IF: { return ifStatement(); }
     case TYPE: {
-      StatementNode* stmt = assignment();
+      // <declaration>
+      StatementNode* stmt = declaration();
       if (is(current, SEMICOLON, true)) { next(); }
       return stmt;
     }
     case SYMBOL: {
-      ExpressionWrapperNode* node = _funcall();
+      // <funcall> | <assignment>
+      Token tmp = current;
+      Token lookup = next();
+      if (is(lookup, PL, true)) {
+        unlex(lookup);
+        current = tmp;
+        ExpressionWrapperNode* node = _funcall();
+        if (is(current, SEMICOLON, true)) { next(); }
+        return node;
+      }
+      unlex(lookup);
+      current = tmp;
+      AssignmentNode* node = assignment();
       if (is(current, SEMICOLON, true)) { next(); }
       return node;
     }
@@ -161,6 +174,21 @@ BlockStatementNode* Parser::blockStatement() {
 
 // assignment := <variable> = <expression>
 AssignmentNode* Parser::assignment() {
+  infoln("debug?: parsing <assignment>");
+  // TODO: lookup table
+  VarNode* lhs = new VarNode(current.getLexeme(), Type::UNDEFINED);
+  if (!is(next(), ASSIGN)) { return NULL; }
+
+  ExpressionNode* rhs = expression();
+
+  if (rhs == NULL) { return NULL; }
+  lexinfo(current);
+  infoln("debug!: parsed <assignment>");
+  return new AssignmentNode(lhs, rhs);
+}
+
+// declaration := Type <variable> = <expression>
+AssignmentNode* Parser::declaration() {
   infoln("debug?: parsing <assignment>");
 
   Type type = fromString(current.getLexeme());

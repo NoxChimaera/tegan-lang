@@ -50,8 +50,9 @@ private:
   StatementNode* statement();
   BlockStatementNode* blockStatement();
   IfStatementNode* ifStatement();
-
+  AssignmentNode* declaration();
   AssignmentNode* assignment();
+
   ExpressionNode* expression();
   ExpressionNode* lor();
   ExpressionNode* land();

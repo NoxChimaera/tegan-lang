@@ -8,6 +8,9 @@
 #include "Parser/Parser.hpp"
 
 int main(int argc, char* argv[]) {
+  std::cout << "Tegan Language Compiler v.0.1"
+    << std::endl<< std::endl << std::endl;
+
   FILE* file = fopen(argv[1], "r");
   if (file == 0) {
     std::cout << "Can't open file " << argv[1] << "\n";
@@ -17,6 +20,7 @@ int main(int argc, char* argv[]) {
   auto parser = Parser();
   Node* node = parser.parse(file);
 
+  std::cout << std::endl;
   Printer printer = Printer();
 
   if (node != NULL) {

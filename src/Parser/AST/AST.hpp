@@ -179,7 +179,7 @@ public:
   IfStatementNode(
     ExpressionNode* aCond, StatementNode* aTrueBranch, StatementNode* aFalseBranch = NULL
   ) : cond(aCond), trueBranch(aTrueBranch), falseBranch(aFalseBranch) {
-    type == Type::UNDEFINED;
+    type = Type::UNDEFINED;
   }
   ExpressionNode* getCond() { return cond; }
   StatementNode* getTrueBranch() { return trueBranch; }
