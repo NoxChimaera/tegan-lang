@@ -2,15 +2,15 @@
 
 #include "Parser.hpp"
 
-Type Parser::fromString(std::string type) {
+TType Parser::fromString(std::string type) {
   if (type == "int") {
-    return Type::INTEGER;
+    return TType::INTEGER;
   } else if (type == "float") {
-    return Type::FLOAT;
+    return TType::FLOAT;
   } else if (type == "string") {
-    return Type::STRING;
+    return TType::STRING;
   }
-  return Type::UNDEFINED;
+  return TType::UNDEFINED;
 }
 
 bool Parser::is(Token aToken, TokenType aExpectedType, bool suppress) {
@@ -67,13 +67,13 @@ FunctionDefNode* Parser::functionDef() {
   t = next();
   if (is(t, PL, true)) {
     args = functionArgs();
-    args.push_back(new VarNode("foo", Type::UNDEFINED));
+    args.push_back(new VarNode("foo", TType::UNDEFINED));
   }
   if (!is(current, COLON)) { return NULL; }
   if (!is(t = next(), TYPE)) { return NULL; }
 
-  Type type = fromString(t.getLexeme());
-  if (type == Type::UNDEFINED) {
+  TType type = fromString(t.getLexeme());
+  if (type == TType::UNDEFINED) {
     std::cout << "WARN: undefined type" << std::endl;
   }
   next();
@@ -176,7 +176,7 @@ BlockStatementNode* Parser::blockStatement() {
 AssignmentNode* Parser::assignment() {
   infoln("debug?: parsing <assignment>");
   // TODO: lookup table
-  VarNode* lhs = new VarNode(current.getLexeme(), Type::UNDEFINED);
+  VarNode* lhs = new VarNode(current.getLexeme(), TType::UNDEFINED);
   if (!is(next(), ASSIGN)) { return NULL; }
 
   ExpressionNode* rhs = expression();
@@ -191,7 +191,7 @@ AssignmentNode* Parser::assignment() {
 AssignmentNode* Parser::declaration() {
   infoln("debug?: parsing <assignment>");
 
-  Type type = fromString(current.getLexeme());
+  TType type = fromString(current.getLexeme());
   if (!is(next(), SYMBOL)) { return NULL; }
   VarNode* lhs = new VarNode(current.getLexeme(), type);
   if (!is(next(), ASSIGN)) { return NULL; }
@@ -365,7 +365,7 @@ VarNode* Parser::var() {
   infoln("debug?: parsing <var>");
   std::string name = current.getLexeme();
   next();
-  return new VarNode(name, Type::UNDEFINED);
+  return new VarNode(name, TType::UNDEFINED);
 }
 
 ExpressionWrapperNode* Parser::_funcall() {
@@ -383,7 +383,7 @@ FuncallNode* Parser::funcall() {
   }
   std::vector<ExpressionNode*> args = funcallArgs();
   next();
-  return new FuncallNode(name, args, Type::UNDEFINED);
+  return new FuncallNode(name, args, TType::UNDEFINED);
 }
 
 // funcall-args := <expression>*

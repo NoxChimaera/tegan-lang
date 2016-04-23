@@ -1,4 +1,4 @@
-enum class Type {
+enum class TType {
   UNDEFINED,
   INTEGER,
   FLOAT,

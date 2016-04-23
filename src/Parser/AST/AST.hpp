@@ -10,10 +10,10 @@ class ASTVisitor;
 
 class Node {
 protected:
-  Type type;
+  TType type;
 public:
   virtual void accept(ASTVisitor& aVisitor) = 0;
-  Type getType() { return type; }
+  TType getType() { return type; }
 };
 
 class VectorNode : public Node {
@@ -21,7 +21,7 @@ private:
   std::vector<Node*> nodes;
 public:
   VectorNode(std::vector<Node*> aNodes) : nodes(aNodes) {
-    type = Type::UNDEFINED;
+    type = TType::UNDEFINED;
   }
   void insert(Node* aNode) {
     nodes.push_back(aNode);
@@ -33,7 +33,7 @@ public:
 class DummyNode : public Node {
 public:
   DummyNode() {
-    type = Type::INTEGER;
+    type = TType::INTEGER;
   }
   void accept(ASTVisitor& aVisitor);
 };
@@ -47,7 +47,7 @@ class VarNode : public ExpressionNode {
 private:
   std::string name;
 public:
-  VarNode(std::string aName, Type aType) : name(aName) {
+  VarNode(std::string aName, TType aType) : name(aName) {
     type = aType;
   }
   std::string getName() { return name; }
@@ -60,7 +60,7 @@ private:
   std::vector<ExpressionNode*> args;
 public:
   FuncallNode(
-    std::string aName, std::vector<ExpressionNode*> aArgs, Type aType
+    std::string aName, std::vector<ExpressionNode*> aArgs, TType aType
   ) : name(aName), args(aArgs) {
     type = aType;
   }
@@ -74,7 +74,7 @@ private:
   int value;
 public:
   IntegerNode(int aValue) : value(aValue) {
-    type = Type::INTEGER;
+    type = TType::INTEGER;
   }
   int getValue() { return value; }
   void accept(ASTVisitor& aVisitor);
@@ -85,7 +85,7 @@ private:
   float value;
 public:
   FloatNode(float aValue) : value(aValue) {
-    type = Type::FLOAT;
+    type = TType::FLOAT;
   }
   float getValue() { return value; }
   void accept(ASTVisitor& aVisitor);
@@ -100,7 +100,7 @@ public:
   BinaryNode(
     std::string aOp, ExpressionNode* aLHS, ExpressionNode* aRHS
   ) : op(aOp), lhs(aLHS), rhs(aRHS) {
-    type = Type::UNDEFINED;
+    type = TType::UNDEFINED;
   }
   std::string getOp() { return op; }
   ExpressionNode* getLHS() { return lhs; }
@@ -161,7 +161,7 @@ public:
   BlockStatementNode(
     std::vector<StatementNode*> aStatements
   ) : statements(aStatements) {
-    type = Type::UNDEFINED; // type = type-of-last-statement
+    type = TType::UNDEFINED; // type = type-of-last-statement
   }
   std::vector<StatementNode*> getStatements() { return statements; }
   void insert(StatementNode* aNode) {
@@ -179,7 +179,7 @@ public:
   IfStatementNode(
     ExpressionNode* aCond, StatementNode* aTrueBranch, StatementNode* aFalseBranch = NULL
   ) : cond(aCond), trueBranch(aTrueBranch), falseBranch(aFalseBranch) {
-    type = Type::UNDEFINED;
+    type = TType::UNDEFINED;
   }
   ExpressionNode* getCond() { return cond; }
   StatementNode* getTrueBranch() { return trueBranch; }
@@ -195,7 +195,7 @@ private:
 public:
   FunctionDefNode(
     std::string aName, std::vector<VarNode*> aArgs,
-    StatementNode* aBody, Type aType
+    StatementNode* aBody, TType aType
   ) : name(aName), args(aArgs), body(aBody) {
     type = aType;
   }

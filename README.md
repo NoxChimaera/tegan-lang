@@ -3,7 +3,7 @@ Toy programming language
 
 ## TODO:
 Operations:
-- [ ] 1: `()` - funcall
+- [x] 1: `()` - funcall
 - [x] 2: `+ -` - unary operators
 - [x] 3: `* /` - multiplicative operators
 - [x] 4: `+ -` - additive operators

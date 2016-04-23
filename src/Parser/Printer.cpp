@@ -1,18 +1,18 @@
 #include <iostream>
 
-#include "ASTVisitor.hpp"
+#include "AST/ASTVisitor.hpp"
 
 class Printer : public ASTVisitor {
 private:
-  std::string show(Type type) {
+  std::string show(TType type) {
     switch (type) {
-      case Type::UNDEFINED:
+      case TType::UNDEFINED:
         return "undef";
-      case Type::INTEGER:
+      case TType::INTEGER:
         return "int";
-      case Type::FLOAT:
+      case TType::FLOAT:
         return "float";
-      case Type::STRING:
+      case TType::STRING:
         return "str";
     }
   }

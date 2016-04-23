@@ -12,7 +12,7 @@ private:
   Token next() { return current = lexer->lex(); }
   void unlex(Token token) { lexer->unlex(token); }
   bool is(Token aToken, TokenType aExpectedType, bool suppress = false);
-  Type fromString(std::string type);
+  TType fromString(std::string type);
 
   void info(std::string msg) {
     if (isDebugMode) {
@@ -70,7 +70,7 @@ private:
 
 public:
   Parser() : current(EOF_TOKEN, 0, 0) {
-    isDebugMode = true;
+    isDebugMode = false;
   }
   Node* parse(FILE* aFile);
 };
