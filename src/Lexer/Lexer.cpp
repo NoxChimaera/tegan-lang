@@ -138,7 +138,7 @@ Token Lexer::lex() {
   if (ch == '+') { col++; return Token(ADD, "+", line, col - 1); }
   if (ch == '-') { col++; return Token(ADD, "-", line, col - 1); }
   if (ch == '*') { col++; return Token(MUL, "*", line, col - 1); }
-  if (ch == '/') { col++; return Token(MUL, "//", line, col - 1); }
+  if (ch == '/') { col++; return Token(MUL, "/", line, col - 1); }
 
   // Comparison operators
   if (ch == '=') {

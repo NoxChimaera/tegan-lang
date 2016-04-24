@@ -17,6 +17,8 @@ private:
 
   Value* retValue;
 
+  std::map<std::string, AllocaInst*> scope;
+
   Type* toLLVMType(TType aType) {
     switch (aType) {
       case TType::INTEGER:
@@ -24,7 +26,7 @@ private:
       case TType::FLOAT:
         return builder.getFloatTy();
     }
-    return NULL;
+    return builder.getInt32Ty();
   }
 
 public:
@@ -38,29 +40,82 @@ public:
     }
   }
 
-  void visit(DummyNode aNode) {
-    // std::cout << " [dummy]";
-  }
+  void visit(DummyNode aNode) { }
   // [<type> <name>]
   void visit(VarNode aNode) {
-    // std::cout << " [" << show(aNode.getType())
-    //   << " " << aNode.getName() << "]";
+    Value* val = scope[aNode.getName()];
+    if (val == NULL) { return; } // TODO: err
+    retValue = builder.CreateLoad(val, aNode.getName());
   }
-  // [<value>I]
+
+  // i32 Value
   void visit(IntegerNode aNode) {
-    // std::cout << " [" << aNode.getValue() << "I]";
+    retValue = ConstantInt::get(builder.getInt32Ty(), aNode.getValue(), false);
   }
   // [<value>F]
   void visit(FloatNode aNode) {
     // std::cout << " ["<< aNode.getValue() << "F]";
   }
 
+  // Name = alloca LLVMType, LLVMType Value
   void visit(AssignmentNode aNode) {
-    // builder.CreateStore()
+    VarNode* variable = aNode.getLHS();
+    AllocaInst* alloca = scope[variable->getName()];
+    if (alloca == NULL) {
+      aNode.getRHS()->accept((*this));
+      if (retValue == NULL) { return; } // error
+
+      alloca = builder.CreateAlloca(
+        toLLVMType(aNode.getType()),
+        NULL,
+        aNode.getLHS()->getName()
+      );
+
+      builder.CreateStore(retValue, alloca);
+
+      std::cout << "gen?: declared variable "
+        << variable->getName() << std::endl;
+      scope[variable->getName()] = alloca;
+    } else {
+      aNode.getRHS()->accept((*this));
+      if (retValue == NULL) { return; } // error
+
+      builder.CreateStore(retValue, alloca);
+
+      std::cout << "gen?: assigned variable"
+        << variable->getName() << std::endl;
+    }
   }
 
   // (<operator> <lhs> <rhs>)
   void visit(BinaryNode aNode) {
+    std::string op = aNode.getOp();
+    if (op == "+") {
+      aNode.getLHS()->accept((*this));
+      Value* lhs = retValue;
+      aNode.getRHS()->accept((*this));
+
+      retValue = builder.CreateAdd(lhs, retValue);
+    } else if (op == "-") {
+      aNode.getLHS()->accept((*this));
+      Value* lhs = retValue;
+      aNode.getRHS()->accept((*this));
+
+      retValue = builder.CreateSub(lhs, retValue);
+    } else if (op == "*") {
+      aNode.getLHS()->accept((*this));
+      Value* lhs = retValue;
+      aNode.getRHS()->accept((*this));
+
+      retValue = builder.CreateMul(lhs, retValue);
+    } else if (op == "/") {
+      aNode.getLHS()->accept((*this));
+      Value* lhs = retValue;
+      aNode.getRHS()->accept((*this));
+
+      retValue = builder.CreateUDiv(lhs, retValue);
+    }
+
     // std::cout << " (" << aNode.getOp() << " ";
     // aNode.getLHS()->accept((*this));
     // aNode.getRHS()->accept((*this));
@@ -85,6 +140,7 @@ public:
   }
 
   // (Func <name> : ( [arg]* ) -> <type> <body>)
+  // define LLVMType @Name ( <args>? ) { <statement>? }
   void visit(FunctionDefNode aNode) {
     std::cout << "gen?: generating <function-definition>" << std::endl;
 
@@ -107,13 +163,13 @@ public:
     aNode.getBody()->accept((*this));
     // Value* val = builder.CreateGlobalStringPtr("hello world\n");
 
-    // std::vector<Type*> putsArgs;
-    // putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    // ArrayRef<Type*> argsRef(putsArgs);
-    // FunctionType* putsType = FunctionType::get(builder.getVoidTy(), argsRef, false);
-    // Constant* putsFunc = module->getOrInsertFunction("puts", putsType);
+    std::vector<Type*> putsArgs;
+    putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
+    ArrayRef<Type*> argsRef(putsArgs);
+    FunctionType* putsType = FunctionType::get(builder.getVoidTy(), argsRef, false);
+    Constant* putsFunc = module->getOrInsertFunction("puts", putsType);
 
-    // builder.CreateCall(putsFunc, val);
+    builder.CreateCall(putsFunc, retValue);
     builder.CreateRet(ConstantInt::get(
       builder.getInt32Ty(), 0, false
     ));
