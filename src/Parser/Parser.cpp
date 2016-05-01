@@ -1,4 +1,4 @@
-// #include <iostream>
+ #include <map>
 
 #include "Parser.hpp"
 
@@ -124,8 +124,20 @@ StatementNode* Parser::statement() {
       if (is(current, SEMICOLON, true)) { next(); }
       return node;
     }
+    case IO_PRINT: {
+      IoPrintNode* iop = ioPrint();
+      if (is(current, SEMICOLON, true)) { next(); }
+      return iop;
+    }
   }
   return NULL;
+}
+
+// io-print ::= Print <expression>
+IoPrintNode* Parser::ioPrint() {
+  infoln("debug?: parsing <io-print>");
+  ExpressionNode* expr = expression();
+  return new IoPrintNode(expr);
 }
 
 // if-stmt := If \( <expression : int> \) <statement>
@@ -172,16 +184,24 @@ BlockStatementNode* Parser::blockStatement() {
   );
 }
 
+std::map<std::string, VarNode*> scope;
+
 // assignment := <variable> = <expression>
 AssignmentNode* Parser::assignment() {
   infoln("debug?: parsing <assignment>");
-  // TODO: lookup table
-  VarNode* lhs = new VarNode(current.getLexeme(), TType::UNDEFINED);
+
+  std::string name = current.getLexeme();
+
+  VarNode* lhs = scope[name];
+
+  // VarNode* lhs = new VarNode(name, TType::UNDEFINED);
   if (!is(next(), ASSIGN)) { return NULL; }
 
   ExpressionNode* rhs = expression();
 
   if (rhs == NULL) { return NULL; }
+
+
   lexinfo(current);
   infoln("debug!: parsed <assignment>");
   return new AssignmentNode(lhs, rhs);
@@ -193,10 +213,14 @@ AssignmentNode* Parser::declaration() {
 
   TType type = fromString(current.getLexeme());
   if (!is(next(), SYMBOL)) { return NULL; }
-  VarNode* lhs = new VarNode(current.getLexeme(), type);
+
+  std::string name = current.getLexeme();
+  VarNode* lhs = new VarNode(name, type);
   if (!is(next(), ASSIGN)) { return NULL; }
 
   ExpressionNode* rhs = expression();
+
+  scope.insert(std::pair<std::string, VarNode*>(name, lhs));
 
   if (rhs == NULL) { return NULL; }
   lexinfo(current);
@@ -405,6 +429,7 @@ IntegerNode* Parser::intgr() {
 FloatNode* Parser::flt() {
   infoln("debug?: parsing <float>");
   std::string value = current.getLexeme();
+  lexinfo(value);
   next();
   return new FloatNode(std::stof(value));
 }

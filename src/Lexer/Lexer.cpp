@@ -80,6 +80,7 @@ Token Lexer::number(char aBegin) {
     if (isdigit(ch)) {
       buffer += ch;
     } else if (ch == '.') {
+      buffer += ch;
       type = FLOAT;
     } else {
       break;

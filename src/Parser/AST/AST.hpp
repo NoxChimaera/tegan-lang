@@ -128,6 +128,18 @@ public:
   virtual void accept(ASTVisitor& aVisitor) = 0;
 };
 
+class IoPrintNode : public StatementNode {
+private:
+  ExpressionNode* subexpr;
+public:
+  IoPrintNode(ExpressionNode* aSubexpr)
+    : subexpr(aSubexpr) {
+    type = TType::UNDEFINED;
+  }
+  ExpressionNode* getSubexpr() { return subexpr; }
+  void accept(ASTVisitor& aVisitor);
+};
+
 class ExpressionWrapperNode : public StatementNode {
 private:
   ExpressionNode* expression;

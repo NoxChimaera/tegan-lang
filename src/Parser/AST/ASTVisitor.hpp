@@ -21,6 +21,8 @@ public:
   virtual void visit(BlockStatementNode aNode) = 0;
   virtual void visit(IfStatementNode aNode) = 0;
   virtual void visit(ExpressionWrapperNode aNode) = 0;
+
+  virtual void visit(IoPrintNode aNode) = 0;
 };
 
 #endif

@@ -8,6 +8,7 @@ private:
   Lexer* lexer;
   Token current;
   bool isDebugMode;
+  bool isSuccess;
 
   Token next() { return current = lexer->lex(); }
   void unlex(Token token) { lexer->unlex(token); }
@@ -39,6 +40,12 @@ private:
       << token.getLine() << ":" << token.getColumn() << ")"
       << std::endl;
   }
+  void error(std::string message, int line, int col) {
+    std::cout << "ERROR: " << message
+      << " at (" << line << ":" << col <<")"
+      << std::endl;
+    isSuccess = false;
+  }
 
   FunctionDefNode* functionDef();
   std::vector<VarNode*> functionArgs();
@@ -52,6 +59,7 @@ private:
   IfStatementNode* ifStatement();
   AssignmentNode* declaration();
   AssignmentNode* assignment();
+  IoPrintNode* ioPrint();
 
   ExpressionNode* expression();
   ExpressionNode* lor();
@@ -71,6 +79,7 @@ private:
 public:
   Parser() : current(EOF_TOKEN, 0, 0) {
     isDebugMode = false;
+    isSuccess = true;
   }
   Node* parse(FILE* aFile);
 };

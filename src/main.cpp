@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
   if (root != NULL) {
     std::cout << std::endl;
     root->accept(printer);
-    
+
     std::cout << std::endl;
     root->accept(codegen);
   } else {

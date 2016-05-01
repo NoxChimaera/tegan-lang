@@ -1,5 +1,5 @@
 # hello
 func main() : int {
-  int foo = 42;
-  int bar = foo / 2;
+  float foo = 42.5;
+  print foo;
 }

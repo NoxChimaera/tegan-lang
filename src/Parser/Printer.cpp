@@ -116,4 +116,11 @@ public:
   void visit(ExpressionWrapperNode aNode) {
     aNode.getExpr()->accept((*this));
   }
+
+  // (Print <expression>)
+  void visit(IoPrintNode aNode) {
+    std::cout << " (Print ";
+    aNode.getSubexpr()->accept((*this));
+    std::cout << ")";
+  }
 };

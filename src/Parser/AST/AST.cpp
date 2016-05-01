@@ -46,3 +46,6 @@ void IfStatementNode::accept(ASTVisitor& aVisitor) {
 void ExpressionWrapperNode::accept(ASTVisitor& aVisitor) {
   aVisitor.visit((*this));
 }
+void IoPrintNode::accept(ASTVisitor& aVisitor) {
+  aVisitor.visit((*this));
+}
