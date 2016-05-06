@@ -1,13 +1,13 @@
 #include "Token.hpp"
 
-Token::Token(TokenType aType, std::string aLexeme, int aLine, int aCol) {
+Token::Token( TokenType aType, std::string aLexeme, int aLine, int aCol ) {
   type = aType;
   lexeme = aLexeme;
   line = aLine;
   col = aCol;
 }
 
-Token::Token(TokenType aType, int aLine, int aCol) {
+Token::Token( TokenType aType, int aLine, int aCol ) {
   type = aType;
   lexeme = "";
   line = aLine;
@@ -19,8 +19,8 @@ std::string Token::getLexeme() { return lexeme; }
 int Token::getLine() { return line; }
 int Token::getColumn() { return col; }
 
-std::string Token::showType(TokenType aType) {
-  switch (aType) {
+std::string Token::showType( TokenType aType ) {
+  switch ( aType ) {
     case EOF_TOKEN: return "EOF";
     case SYMBOL: return "SYMBOL";
     case INTEGER: return "INT";

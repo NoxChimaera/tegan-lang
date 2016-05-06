@@ -12,41 +12,56 @@ private:
 
   std::map<std::string, VarNode*> scope;
 
-  Token next() { return current = lexer->lex(); }
-  void unlex(Token token) { lexer->unlex(token); }
-  bool is(Token aToken, TokenType aExpectedType, bool suppress = false);
-  TType fromString(std::string type);
+  std::string show( const TType aType ) {
+    switch ( aType ) {
+      case TType::INTEGER: return "Int";
+      case TType::FLOAT: return "Float";
+      default: return "Undefined";
+    }
+  }
 
-  void info(std::string msg) {
-    if (isDebugMode) {
-      std::cout << msg;
+  Token next() { return current = lexer->lex(); }
+  void unlex( Token aToken ) { lexer->unlex( aToken ); }
+  bool is( Token aToken, TokenType aExpectedType, bool aSuppress = false );
+  TType fromString( std::string aType );
+
+  void info( std::string aMsg ) {
+    if ( isDebugMode ) {
+      std::cout << aMsg;
     }
   }
-  void infoln(std::string msg = "") {
-    if (isDebugMode) {
-      std::cout << msg << std::endl;
+  void infoln( std::string aMsg = "" ) {
+    if ( isDebugMode ) {
+      std::cout << aMsg << std::endl;
     }
   }
-  void lexinfo(std::string lexeme) {
-    if (isDebugMode) {
-      std::cout << "lex!: " << lexeme << std::endl;
+  void lexinfo( std::string aLexeme ) {
+    if ( isDebugMode ) {
+      std::cout << "lex!: " << aLexeme << std::endl;
     }
   }
-  void lexinfo(std::string lexeme, TokenType type) {
-     std::cout << "lex!: " << lexeme << " of "
-       << Token::showType(type) << std::endl;
+  void lexinfo( std::string aLexeme, TokenType aType ) {
+     std::cout << "lex!: " << aLexeme << " of "
+       << Token::showType( aType ) << std::endl;
   }
-  void lexinfo(Token token) {
-    std::cout << "lex!: " << token.getLexeme() << " of "
-      << Token::showType(token.getType()) << " at ("
-      << token.getLine() << ":" << token.getColumn() << ")"
+  void lexinfo( Token aToken ) {
+    std::cout << "lex!: " << aToken.getLexeme() << " of "
+      << Token::showType( aToken.getType() ) << " at ("
+      << aToken.getLine() << ":" << aToken.getColumn() << ")"
       << std::endl;
   }
-  void error(std::string message, int line, int col) {
-    std::cout << "ERROR: " << message
-      << " at (" << line << ":" << col <<")"
+
+  void error( int aLine, std::string aMessage ) {
+    std::cout << "ERROR: " << aMessage
+      << " at" << aLine << " line"
       << std::endl;
     isSuccess = false;
+  }
+
+  void errorty( int aLine, TType aSrc, TType aDst ) {
+    std::cout << "ERROR: can't cast from " << show( aSrc )
+      << " to " << show( aDst )
+      <<" at " << aLine << " line" << std::endl;
   }
 
   FunctionDefNode* functionDef();
@@ -79,9 +94,9 @@ private:
   VarNode* var();
 
 public:
-  Parser() : current(EOF_TOKEN, 0, 0) {
+  Parser() : current( EOF_TOKEN, 0, 0 ) {
     isDebugMode = false;
     isSuccess = true;
   }
-  Node* parse(FILE* aFile);
+  Node* parse( FILE* aFile );
 };

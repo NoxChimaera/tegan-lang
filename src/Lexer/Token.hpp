@@ -26,11 +26,11 @@ enum TokenType {
 
 class Token {
 public:
-  Token(TokenType aType, std::string aLexeme, int line, int col);
-  Token(TokenType aType, int line, int col);
+  Token( TokenType aType, std::string aLexeme, int line, int col );
+  Token( TokenType aType, int line, int col );
   TokenType getType();
   std::string getLexeme();
-  static std::string showType(TokenType aType);
+  static std::string showType( TokenType aType );
   int getLine();
   int getColumn();
 
