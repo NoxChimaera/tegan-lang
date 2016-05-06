@@ -1,4 +1,4 @@
- #include <map>
+#include <map>
 
 #include "Parser.hpp"
 
@@ -25,7 +25,7 @@ bool Parser::is(Token aToken, TokenType aExpectedType, bool suppress) {
   return true;
 }
 
-Node* Parser::parse(FILE* aFile) {
+Node* Parser::parse( FILE* aFile ) {
   lexer = new Lexer(aFile);
 
   VectorNode* root = new VectorNode(std::vector<Node*>());
@@ -50,7 +50,6 @@ Node* Parser::parse(FILE* aFile) {
   return new DummyNode();
 }
 
-// DONE
 // function-definition
 //  := func <name> [( <function-args> )]? : <type> <statement>
 FunctionDefNode* Parser::functionDef() {
@@ -184,8 +183,6 @@ BlockStatementNode* Parser::blockStatement() {
   );
 }
 
-std::map<std::string, VarNode*> scope;
-
 // assignment := <variable> = <expression>
 AssignmentNode* Parser::assignment() {
   infoln("debug?: parsing <assignment>");
@@ -241,7 +238,7 @@ ExpressionNode* Parser::expression() {
 
 // lor := <land> (LOr <lor : int>)?
 ExpressionNode* Parser::lor() {
-  ExpressionNode* node = land();
+  ExpressionNode* lhs = land();
   // lexinfo(current.getLexeme(), current.getType());
   if (is(current, LOR, true)) {
     infoln("debug?: parsing <lor>");
@@ -249,30 +246,30 @@ ExpressionNode* Parser::lor() {
     next();
     ExpressionNode* rhs = lor();
     return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+      TType::INTEGER, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // land := <cmpeq> (LAnd <land : int>)?
 ExpressionNode* Parser::land() {
-  ExpressionNode* node = cmpeq();
+  ExpressionNode* lhs = cmpeq();
   if (is(current, LAND, true)) {
     infoln("debug?: parsing <land>");
     std::string op = current.getLexeme();
     next();
     ExpressionNode* rhs = land();
     return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+      TType::INTEGER, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // cmpeq := <cmp> (Eq <cmpeq>)?
 ExpressionNode* Parser::cmpeq() {
-  ExpressionNode* node = cmp();
+  ExpressionNode* lhs = cmp();
   // lexinfo(current.getLexeme(), current.getType());
   if (is(current, CMP_EQ, true)) {
     infoln("debug?: parsing <cmpeq>");
@@ -280,15 +277,15 @@ ExpressionNode* Parser::cmpeq() {
     next();
     ExpressionNode* rhs = cmpeq();
     return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+      TType::INTEGER, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // cmp := <add> (Cmp <cmp>)?
 ExpressionNode* Parser::cmp() {
-  ExpressionNode* node = additive();
+  ExpressionNode* lhs = additive();
   // lexinfo(current.getLexeme(), current.getType());
   if (is(current, CMP, true)) {
     infoln("debug?: parsing <cmp>");
@@ -296,42 +293,56 @@ ExpressionNode* Parser::cmp() {
     next();
     ExpressionNode* rhs = cmp();
     return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+      TType::INTEGER, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // add := <mul> (Add <add>)?
 ExpressionNode* Parser::additive() {
-  ExpressionNode* node = multiplicative();
+  ExpressionNode* lhs = multiplicative();
   // lexinfo(current.getLexeme(), current.getType());
   if (is(current, ADD, true)) {
     infoln("debug?: parsing <add>");
     std::string op = current.getLexeme();
     next();
     ExpressionNode* rhs = additive();
-    return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+    if (rhs == NULL) { return NULL; }
+
+    TType type = TType::INTEGER;
+    if (lhs->getType() == TType::FLOAT || rhs->getType() == TType::FLOAT) {
+      type = TType::FLOAT;
+    }
+
+    return new BinaryNode(
+      type, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // mul := <unary> (Mul <mul>)?
 ExpressionNode* Parser::multiplicative() {
-  ExpressionNode* node = unary();
+  ExpressionNode* lhs = unary();
   // lexinfo(current.getLexeme(), current.getType());
   if (is(current, MUL, true)) {
     infoln("debug?: parsing <mul>");
     std::string op = current.getLexeme();
     next();
     ExpressionNode* rhs = multiplicative();
-    return rhs == NULL ? NULL : new BinaryNode(
-      op, node, rhs
+    if (rhs == NULL) { return NULL; }
+
+    TType type = TType::INTEGER;
+    if (lhs->getType() == TType::FLOAT || rhs->getType() == TType::FLOAT) {
+      type = TType::FLOAT;
+    }
+
+    return new BinaryNode(
+      type, op, lhs, rhs
     );
   }
-  return node;
+  return lhs;
 }
 
 // unary := UnaryOperator? <factor>
@@ -389,7 +400,10 @@ VarNode* Parser::var() {
   infoln("debug?: parsing <var>");
   std::string name = current.getLexeme();
   next();
-  return new VarNode(name, TType::UNDEFINED);
+
+  VarNode* var = scope[name];
+  if (var != NULL) { return var; }
+  return new VarNode( name, TType::UNDEFINED );
 }
 
 ExpressionWrapperNode* Parser::_funcall() {

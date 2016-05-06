@@ -98,9 +98,9 @@ private:
   ExpressionNode* rhs;
 public:
   BinaryNode(
-    std::string aOp, ExpressionNode* aLHS, ExpressionNode* aRHS
+    TType aType, std::string aOp, ExpressionNode* aLHS, ExpressionNode* aRHS
   ) : op(aOp), lhs(aLHS), rhs(aRHS) {
-    type = TType::UNDEFINED;
+    type = aType;
   }
   std::string getOp() { return op; }
   ExpressionNode* getLHS() { return lhs; }
@@ -159,7 +159,7 @@ private:
 public:
   AssignmentNode(VarNode* aVariable, ExpressionNode* aRHS)
     : lhs(aVariable), rhs(aRHS) {
-    type = rhs->getType();
+    type = lhs->getType();
   }
   VarNode* getLHS() { return lhs; }
   ExpressionNode* getRHS() { return rhs; }

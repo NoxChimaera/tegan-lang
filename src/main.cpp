@@ -11,10 +11,16 @@ int main(int argc, char* argv[]) {
     << std::endl<< std::endl << std::endl;
 
   FILE* file = fopen(argv[1], "r");
-  if (file == 0) {
+  if ( file == 0 ) {
     std::cout << "Can't open file " << argv[1] << "\n";
     return 1;
   }
+
+  if ( argv[2] == NULL ) {
+    std::cout << "Specify output file" << std::endl;
+    return 1;
+  }
+  char* output = argv[2];
 
   auto parser = Parser();
   Node* root = parser.parse(file);
@@ -28,7 +34,10 @@ int main(int argc, char* argv[]) {
     root->accept(printer);
 
     std::cout << std::endl;
-    root->accept(codegen);
+    root->accept( codegen );
+
+    codegen.save( output );
+
   } else {
     std::cout << "EXIT" << std::endl;
   }

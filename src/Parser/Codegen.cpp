@@ -3,9 +3,9 @@
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
-// #include <llvm/DerivedTypes.h>
-// #include <llvm/Type.h>
 #include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/FileSystem.h>
 
 #include "AST/ASTVisitor.hpp"
 
@@ -28,8 +28,8 @@ private:
 
   std::map<std::string, AllocaInst*> scope;
 
-  Type* toLLVMType(TType aType) {
-    switch (aType) {
+  Type* toLLVMType( TType aType ) {
+    switch ( aType ) {
       case TType::INTEGER:
         return builder.getInt32Ty();
       case TType::FLOAT:
@@ -38,14 +38,26 @@ private:
     return builder.getInt32Ty();
   }
 
-  void error(std::string message) {
+  void error( std::string message ) {
     std::cout << "ERROR@IR: " << message << std::endl;
     generateIR = false;
     isSuccess = false;
   }
 
+  Value* cast( Value* aValue, TType aFrom, TType aTo ) {
+    return builder.CreateCast(
+      /*OpCode=*/ CastInst::getCastOpcode(
+        /*Value=*/ aValue,
+        /*SrcIsSigned=*/ true,
+        /*DestType=*/ toLLVMType( aTo ),
+        /*DestIsSigned=*/ true ),
+      /*Value=*/ aValue,
+      /*DestType=*/ toLLVMType( aTo )
+    );
+  }
+
 public:
-  Codegen() : builder(getGlobalContext()) {
+  Codegen() : builder( getGlobalContext() ) {
     isSuccess = true;
     generateIR = true;
 
@@ -75,6 +87,16 @@ public:
     FunctionType* type = FunctionType::get(builder.getInt32Ty(), argsRef, true);
 
     print = module->getOrInsertFunction("printf", type);
+  }
+
+  // void save( const std::string aOutPath ) {
+  void save( const char* aOutPath ) {
+    std::string error_code("???");
+    llvm::raw_fd_ostream out( aOutPath, error_code, llvm::sys::fs::OpenFlags::F_RW );
+    module->print(
+      out,
+      NULL
+    );
   }
 
   void visit(VectorNode aNode) {
@@ -127,10 +149,15 @@ public:
       alloca = builder.CreateAlloca(
         toLLVMType(aNode.getType()),
         NULL,
-        aNode.getLHS()->getName()
+        variable->getName()
       );
 
-      builder.CreateStore(operands.top(), alloca);
+      Value* rhs = operands.top();
+      if ( variable->getType() != aNode.getRHS()->getType() ) {
+        rhs = cast( rhs, aNode.getRHS()->getType(), variable->getType() );
+      }
+
+      builder.CreateStore( rhs, alloca );
       operands.pop();
 
       scope[variable->getName()] = alloca;
@@ -228,18 +255,9 @@ public:
     builder.SetInsertPoint(bb);
 
     aNode.getBody()->accept((*this));
-    // Value* val = builder.CreateGlobalStringPtr("hello world\n");
 
-    // std::vector<Type*> putsArgs;
-    // putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    // ArrayRef<Type*> argsRef(putsArgs);
-    // FunctionType* putsType = FunctionType::get(builder.getVoidTy(), argsRef, false);
-    // Constant* putsFunc = module->getOrInsertFunction("puts", putsType);
-    //
-    // builder.CreateCall(putsFunc, retValue);
-    // builder.CreateRet(ConstantInt::get(
-    //   builder.getInt32Ty(), 0, false
-    // ));
+    // Dummied
+    builder.CreateRet( ConstantInt::get( builder.getInt32Ty(), 0, false ) );
 
     module->dump();
   }

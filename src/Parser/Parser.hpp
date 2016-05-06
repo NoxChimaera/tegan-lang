@@ -10,6 +10,8 @@ private:
   bool isDebugMode;
   bool isSuccess;
 
+  std::map<std::string, VarNode*> scope;
+
   Token next() { return current = lexer->lex(); }
   void unlex(Token token) { lexer->unlex(token); }
   bool is(Token aToken, TokenType aExpectedType, bool suppress = false);
