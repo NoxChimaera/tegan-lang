@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stack>
+#include <typeinfo>
 
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -26,7 +27,9 @@ private:
   std::stack<Value*> operands;
   Value* retValue;
 
-  std::map<std::string, AllocaInst*> scope;
+  std::map<std::string, Value*> scope;
+  std::map<std::string, Value*> argScope;
+  std::map<std::string, Function*> funcs;
 
   Type* toLLVMType( TType aType ) {
     switch ( aType ) {
@@ -53,9 +56,11 @@ private:
   */
   Value* cast( Value* aValue, TType aFrom, TType aTo ) {
     if ( aFrom == aTo ) {
+      std::cout << "from == to" << std::endl;
       return aValue;
     }
 
+std::cout << "create cast" << std::endl;
     return builder.CreateCast(
       /*OpCode=*/ CastInst::getCastOpcode(
         /*Value=*/ aValue,
@@ -65,6 +70,7 @@ private:
       /*Value=*/ aValue,
       /*DestType=*/ toLLVMType( aTo )
     );
+    std::cout << "created cast" << std::endl;
   }
 
 public:
@@ -133,13 +139,25 @@ public:
     else generates ERROR
   */
   void visit( VarNode aNode ) {
-    Value* val = scope[ aNode.getName() ];
+    Value* val = argScope[ aNode.getName() ];
+    bool isArg = false;
+    if (val == NULL) {
+      val = scope[ aNode.getName() ];
+    } else {
+      isArg = true;
+    }
+
     if ( val == NULL ) {
       error( "Can't find variable " + aNode.getName() );
       return;
     }
 
-    operands.push( builder.CreateLoad( val, aNode.getName() ) );
+    if ( isArg ) {
+      operands.push( val );
+    } else {
+      Value* loadInstr = builder.CreateLoad( val, aNode.getName() );
+      operands.push( loadInstr );
+    }
   }
 
   /**
@@ -178,7 +196,7 @@ public:
   */
   void visit( AssignmentNode aNode ) {
     VarNode* variable = aNode.getLHS();
-    AllocaInst* alloca = scope[ variable->getName() ];
+    Value* alloca = scope[ variable->getName() ];
 
     std::cout << "assign" << std::endl;
 
@@ -196,7 +214,6 @@ public:
       if ( variable->getType() != aNode.getRHS()->getType() ) {
         rhs = cast( rhs, aNode.getRHS()->getType(), variable->getType() );
       }
-
       builder.CreateStore( rhs, alloca );
       operands.pop();
 
@@ -286,31 +303,64 @@ public:
     // std::cout << ")";
   }
 
-  // (Call <name> : ( [arg]* ) -> <type>)
+  /**
+  Generates IR for function call
+  \return Returns via stack call instruction
+  */
   void visit( FuncallNode aNode ) {
-    // std::cout << " (Call " << aNode.getName() << " : (";
-    // for (ExpressionNode* node : aNode.getArgs()) {
-    //   node->accept((*this));
-    // }
-    // std::cout << " ) -> " << show(aNode.getType())
-    //   << ")";
+    Function* func = funcs[ aNode.getName() ];
+    if ( func == NULL ) {
+      std::cout << "error" << std::endl;
+      return;
+    }
+
+    std::vector<ExpressionNode*> args = aNode.getArgs();
+    std::vector<Value*> argsVal;
+    for ( ExpressionNode* arg : args ) {
+      arg->accept( (*this) );
+      argsVal.push_back( operands.top() );
+      operands.pop();
+    }
+
+    Value* callInstr = builder.CreateCall( func, argsVal );
+    operands.push( callInstr );
   }
 
-  // (Func <name> : ( [arg]* ) -> <type> <body>)
-  // define LLVMType @Name ( <args>? ) { <statement>? }
+  /**
+  Generates IR for function
+  */
   void visit( FunctionDefNode aNode ) {
     std::cout << "gen?: generating <function-definition>" << std::endl;
 
-    // std::vector<Type*> args(0, builder.getInt32Ty()));
-    // FunctionType* funcType = FunctionType::get(
-    //   Type::getInt32Ty(getGlobalContext()), args, false
-    // );
+    scope.clear();
+
+    std::vector<Type*> argsTy;
+    std::vector<VarNode*> args = aNode.getArgs();
+    for (
+      std::vector<VarNode*>::iterator it = args.begin();
+      it != args.end(); ++it
+    ) {
+      argsTy.push_back( toLLVMType( (*it)->getType() ) );
+    }
+
     FunctionType* funcType = FunctionType::get(
-      builder.getInt32Ty(), false
+      toLLVMType( aNode.getType() ), argsTy, false
     );
     Function* func = Function::Create(
       funcType, Function::ExternalLinkage, aNode.getName(), module
     );
+    funcs[ aNode.getName() ] = func;
+
+    int idx(0);
+    for (
+      Function::arg_iterator arg = func->arg_begin();
+      idx != argsTy.size();
+      ++arg, ++idx
+    ) {
+      std::string argName = args[ idx ]->getName();
+      arg->setName( argName );
+      argScope[ argName ] = arg;
+    }
 
     BasicBlock* bb = BasicBlock::Create(
       getGlobalContext(), "entry", func
@@ -318,9 +368,6 @@ public:
     builder.SetInsertPoint( bb );
 
     aNode.getBody()->accept( (*this) );
-
-    // Dummy
-    builder.CreateRet( ConstantInt::get( builder.getInt32Ty(), 0, false ) );
   }
 
   void visit( BlockStatementNode aNode ) {
@@ -348,26 +395,17 @@ public:
     // aNode.getExpr()->accept((*this));
   }
 
-  // (Print <expression>)
+  /**
+  Generates IR for print statement (intrinsic)
+  */
   void visit( IoPrintNode aNode ) {
     aNode.getSubexpr()->accept( (*this) );
-
-    // Value* val = builder.CreateGlobalStringPtr("hello world\n");
-    // std::vector<Type*> putsArgs;
-    // putsArgs.push_back(builder.getInt8Ty()->getPointerTo());
-    // ArrayRef<Type*> argsRef(putsArgs);
-    // FunctionType* putsType = FunctionType::get(builder.getVoidTy(), argsRef, false);
-    // Constant* putsFunc = module->getOrInsertFunction("puts", putsType);
-    //
-    // builder.CreateCall(putsFunc, retValue);
 
     std::vector<Value*> args;
     std::vector<Value*> idx;
     idx.push_back( ConstantInt::get( builder.getInt32Ty(), 0, false ) );
     idx.push_back( ConstantInt::get( builder.getInt32Ty(), 0, false ) );
     ArrayRef<Value*> idxRef( idx );
-
-    // args.push_back(formati->getType()->getPointerTo());
 
     if ( aNode.getSubexpr()->getType() == TType::FLOAT ) {
       args.push_back( builder.CreateInBoundsGEP( formatf, idxRef ) );
@@ -380,5 +418,14 @@ public:
 
     ArrayRef<Value*> argsRef( args );
     builder.CreateCall( print, argsRef );
+  }
+
+  /**
+  Generates IR for return statement
+  */
+  void visit( ReturnNode aNode ) {
+    aNode.getSubexpr()->accept( (*this) );
+    builder.CreateRet( operands.top() );
+    operands.pop();
   }
 };

@@ -23,6 +23,7 @@ public:
   virtual void visit( ExpressionWrapperNode aNode ) = 0;
 
   virtual void visit( IoPrintNode aNode ) = 0;
+  virtual void visit( ReturnNode aNode ) = 0;
 };
 
 #endif

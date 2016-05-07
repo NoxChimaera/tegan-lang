@@ -49,3 +49,6 @@ void ExpressionWrapperNode::accept( ASTVisitor& aVisitor ) {
 void IoPrintNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
+void ReturnNode::accept( ASTVisitor& aVisitor ) {
+  aVisitor.visit( (*this) );
+}

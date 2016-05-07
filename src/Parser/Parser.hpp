@@ -12,6 +12,7 @@ private:
   bool isError;
 
   std::map<std::string, VarNode*> scope;
+  std::map<std::string, FunctionDefNode*> funcs;
 
   std::string show( const TType aType ) {
     switch ( aType ) {
@@ -84,6 +85,7 @@ private:
   AssignmentNode* declaration();
   AssignmentNode* assignment();
   IoPrintNode* ioPrint();
+  ReturnNode* ret();
 
   ExpressionNode* expression();
   ExpressionNode* lor();
@@ -102,7 +104,7 @@ private:
 
 public:
   Parser() : current( EOF_TOKEN, 0, 0 ) {
-    isDebugMode = false;
+    isDebugMode = true;
     isSuccess = true;
     isError = false;
   }

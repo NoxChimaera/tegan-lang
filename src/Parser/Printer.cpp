@@ -122,4 +122,11 @@ public:
     aNode.getSubexpr()->accept( (*this) );
     std::cout << ")";
   }
+
+  // (Ret <expression>)
+  void visit( ReturnNode aNode ) {
+    std::cout << " (Ret ";
+    aNode.getSubexpr()->accept( (*this) );
+    std::cout << ")";
+  }
 };

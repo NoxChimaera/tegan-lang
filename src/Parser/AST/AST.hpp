@@ -140,6 +140,18 @@ public:
   void accept( ASTVisitor& aVisitor );
 };
 
+class ReturnNode : public StatementNode {
+private:
+  ExpressionNode* subexpr;
+public:
+  ReturnNode( ExpressionNode* aSubexpr )
+    : subexpr( aSubexpr ) {
+    type = aSubexpr->getType();
+  }
+  ExpressionNode* getSubexpr() { return subexpr; }
+  void accept( ASTVisitor& aVisitor );
+};
+
 class ExpressionWrapperNode : public StatementNode {
 private:
   ExpressionNode* expression;

@@ -1,8 +1,7 @@
 # hello
-func main() : int {
-  float foo = 5;
-  foo = 425 * foo;
-  print foo
-}
+func add( int a, int b ) : int return a + b
 
-# func main() : int print 42
+func main() : int {
+  print add( 20, 21 )
+  return 0
+}
