@@ -33,11 +33,13 @@ int main( int argc, char* argv[] ) {
     std::cout << std::endl;
     root->accept( printer );
 
-    std::cout << std::endl;
-    root->accept( codegen );
+    if ( !parser.isFailed() ) {
+      std::cout << std::endl;
+      root->accept( codegen );
 
-    codegen.save( output );
-
+      codegen.dump();
+      codegen.save( output );
+    }
   } else {
     std::cout << "EXIT" << std::endl;
   }

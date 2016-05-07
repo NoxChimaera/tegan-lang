@@ -54,6 +54,7 @@ Node* Parser::parse( FILE* aFile ) {
 //  := func <name> [( <function-args> )]? : <type> <statement>
 FunctionDefNode* Parser::functionDef() {
   infoln( "debug?: parsing <function-definition>" );
+  scope.clear();
   Token t = next();
 
   if ( !is( t, SYMBOL ) ) {
@@ -62,11 +63,22 @@ FunctionDefNode* Parser::functionDef() {
   std::string name = t.getLexeme();
   std::cout << "debug?: defining function '" << name << "'" << std::endl;
 
-  std::vector<VarNode*> args = std::vector<VarNode*>();
   t = next();
+  std::vector<VarNode*> args;
   if ( is( t, PL, true ) ) {
+    next();
     args = functionArgs();
-    args.push_back( new VarNode( "foo", TType::UNDEFINED ) );
+
+    for (
+      std::vector<VarNode*>::iterator it = args.begin();
+      it != args.end(); ++it
+    ) {
+      scope.insert( std::pair<std::string, VarNode*>( (*it)->getName(), (*it) ) );
+    }
+
+    // std::vector<int>::iterator it = myvector.begin() ; it != myvector.end(); ++it
+
+    // args.push_back( new VarNode( "foo", TType::UNDEFINED ) );
   }
   if ( !is( current, COLON ) ) { return NULL; }
   if ( !is( t = next(), TYPE ) ) { return NULL; }
@@ -85,10 +97,27 @@ FunctionDefNode* Parser::functionDef() {
 // function-args := [<type> <variable>,]* [<type> <variable>]?
 std::vector<VarNode*> Parser::functionArgs() {
   infoln( "debug?: parsing <function-args>" );
-  // TODO: parse arguments
-  while( !is( next(), PR, true ) );
+  std::vector<VarNode*> args;
+  while ( 1 ) {
+    if ( is( current, PR, true ) ) { break; }
+    if ( !is( current, TYPE ) ) { return args; }
+    Token ty = current;
+    if ( !is( next(), SYMBOL ) ) { return args; }
+    Token var = current;
+    VarNode* arg = new VarNode( var.getLexeme(), fromString( ty.getLexeme() ) );
+    args.push_back( arg );
+
+    next();
+    if ( is( current, COMMA, true ) ) {
+      next();
+      continue;
+    }
+    if ( is( current, PR ) ) { break; }
+    else { return args; }
+  }
+
   next();
-  return std::vector<VarNode*>();
+  return args;
 }
 
 // statement := <block> | <expression> | <compound-statement>
@@ -193,10 +222,13 @@ AssignmentNode* Parser::assignment() {
   // VarNode* lhs = new VarNode(name, TType::UNDEFINED);
   if ( !is( next(), ASSIGN ) ) { return NULL; }
 
+  Token op = current;
   ExpressionNode* rhs = expression();
 
-  if ( rhs == NULL ) { return NULL; }
-
+  if ( rhs == NULL ) {
+    error( op.getLine(), "expression expected after `=`" );
+    return NULL;
+  }
 
   lexinfo( current );
   infoln( "debug!: parsed <assignment>" );
@@ -205,7 +237,7 @@ AssignmentNode* Parser::assignment() {
 
 // declaration := Type <variable> = <expression>
 AssignmentNode* Parser::declaration() {
-  infoln( "debug?: parsing <assignment>" );
+  infoln( "debug?: parsing <declaration>" );
 
   TType type = fromString( current.getLexeme() );
   if ( !is( next(), SYMBOL ) ) { return NULL; }
@@ -214,11 +246,16 @@ AssignmentNode* Parser::declaration() {
   VarNode* lhs = new VarNode( name, type );
   if ( !is( next(), ASSIGN ) ) { return NULL; }
 
+  Token op = current;
   ExpressionNode* rhs = expression();
+
+  if ( rhs == NULL ) {
+    error( op.getLine(), "expression expected after `=`" );
+    return NULL;
+  }
 
   scope.insert( std::pair<std::string, VarNode*>( name, lhs ) );
 
-  if ( rhs == NULL ) { return NULL; }
   lexinfo( current );
   infoln( "debug!: parsed <assignment>" );
   return new AssignmentNode( lhs, rhs );
@@ -227,9 +264,11 @@ AssignmentNode* Parser::declaration() {
 // expression := <add>
 ExpressionNode* Parser::expression() {
   infoln( "debug?: parsing <expression>" );
-
+  Token t = current;
   switch ( next().getType() ) {
-    case EOF_TOKEN: return NULL;
+    case EOF_TOKEN:
+      error( t.getLine(), "unexpected End-Of-File" );
+      return NULL;
   }
   ExpressionNode* node = lor();
   return node;
@@ -241,10 +280,18 @@ ExpressionNode* Parser::lor() {
   // lexinfo(current.getLexeme(), current.getType());
   if ( is( current, LOR, true ) ) {
     infoln( "debug?: parsing <lor>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = lor();
-    return rhs == NULL ? NULL : new BinaryNode(
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    return new BinaryNode(
       TType::INTEGER, op, lhs, rhs
     );
   }
@@ -256,10 +303,18 @@ ExpressionNode* Parser::land() {
   ExpressionNode* lhs = cmpeq();
   if ( is( current, LAND, true ) ) {
     infoln( "debug?: parsing <land>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = land();
-    return rhs == NULL ? NULL : new BinaryNode(
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    return new BinaryNode(
       TType::INTEGER, op, lhs, rhs
     );
   }
@@ -272,10 +327,18 @@ ExpressionNode* Parser::cmpeq() {
   // lexinfo(current.getLexeme(), current.getType());
   if ( is( current, CMP_EQ, true ) ) {
     infoln( "debug?: parsing <cmpeq>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = cmpeq();
-    return rhs == NULL ? NULL : new BinaryNode(
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    return new BinaryNode(
       TType::INTEGER, op, lhs, rhs
     );
   }
@@ -288,10 +351,18 @@ ExpressionNode* Parser::cmp() {
   // lexinfo(current.getLexeme(), current.getType());
   if ( is( current, CMP, true ) ) {
     infoln( "debug?: parsing <cmp>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = cmp();
-    return rhs == NULL ? NULL : new BinaryNode(
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    return new BinaryNode(
       TType::INTEGER, op, lhs, rhs
     );
   }
@@ -304,10 +375,16 @@ ExpressionNode* Parser::additive() {
   // lexinfo(current.getLexeme(), current.getType());
   if ( is( current, ADD, true ) ) {
     infoln( "debug?: parsing <add>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = additive();
-    if ( rhs == NULL ) { return NULL; }
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
 
     TType type = TType::INTEGER;
     if ( lhs->getType() == TType::FLOAT || rhs->getType() == TType::FLOAT ) {
@@ -327,10 +404,16 @@ ExpressionNode* Parser::multiplicative() {
   // lexinfo(current.getLexeme(), current.getType());
   if ( is( current, MUL, true ) ) {
     infoln( "debug?: parsing <mul>" );
-    std::string op = current.getLexeme();
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
     next();
     ExpressionNode* rhs = multiplicative();
-    if ( rhs == NULL ) { return NULL; }
+    if ( rhs == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
 
     TType type = TType::INTEGER;
     if ( lhs->getType() == TType::FLOAT || rhs->getType() == TType::FLOAT ) {
@@ -348,11 +431,18 @@ ExpressionNode* Parser::multiplicative() {
 ExpressionNode* Parser::unary() {
   if ( is( current, ADD, true ) || is( current, NOT, true ) ) {
     infoln( "debug?: parsing <unary>" );
-    std::string op = current.getLexeme();
-      next();
-      ExpressionNode* exp = unary();
-      if ( exp == NULL ) { return NULL; }
-      return new UnaryNode( op, exp );
+
+    Token t = current;
+    std::string op = t.getLexeme();
+
+    next();
+    ExpressionNode* exp = unary();
+    if ( exp == NULL ) {
+      error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    return new UnaryNode( op, exp );
   }
   ExpressionNode* node = factor();
   return node;
@@ -396,11 +486,15 @@ ExpressionNode* Parser::constant() {
 // var := Symbol | Symbol \( <funcall-args> \)
 VarNode* Parser::var() {
   infoln( "debug?: parsing <var>" );
+
+  Token t = current;
   std::string name = current.getLexeme();
   next();
 
   VarNode* var = scope[ name ];
   if ( var != NULL ) { return var; }
+
+  error( t.getLine(), "variable " + name + " is not initilized" );
   return new VarNode( name, TType::UNDEFINED );
 }
 

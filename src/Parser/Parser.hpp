@@ -9,6 +9,7 @@ private:
   Token current;
   bool isDebugMode;
   bool isSuccess;
+  bool isError;
 
   std::map<std::string, VarNode*> scope;
 
@@ -41,27 +42,33 @@ private:
     }
   }
   void lexinfo( std::string aLexeme, TokenType aType ) {
-     std::cout << "lex!: " << aLexeme << " of "
-       << Token::showType( aType ) << std::endl;
+    if ( isDebugMode ) {
+       std::cout << "lex!: " << aLexeme << " of "
+         << Token::showType( aType ) << std::endl;
+    }
   }
   void lexinfo( Token aToken ) {
-    std::cout << "lex!: " << aToken.getLexeme() << " of "
-      << Token::showType( aToken.getType() ) << " at ("
-      << aToken.getLine() << ":" << aToken.getColumn() << ")"
-      << std::endl;
+    if ( isDebugMode ) {
+      std::cout << "lex!: " << aToken.getLexeme() << " of "
+        << Token::showType( aToken.getType() ) << " at ("
+        << aToken.getLine() << ":" << aToken.getColumn() << ")"
+        << std::endl;
+    }
   }
 
   void error( int aLine, std::string aMessage ) {
     std::cout << "ERROR: " << aMessage
-      << " at" << aLine << " line"
+      << " at " << aLine << " line"
       << std::endl;
     isSuccess = false;
+    isError = true;
   }
 
   void errorty( int aLine, TType aSrc, TType aDst ) {
     std::cout << "ERROR: can't cast from " << show( aSrc )
       << " to " << show( aDst )
       <<" at " << aLine << " line" << std::endl;
+    isError = true;
   }
 
   FunctionDefNode* functionDef();
@@ -97,6 +104,10 @@ public:
   Parser() : current( EOF_TOKEN, 0, 0 ) {
     isDebugMode = false;
     isSuccess = true;
+    isError = false;
   }
+
+  bool isFailed() { return isError; }
+
   Node* parse( FILE* aFile );
 };

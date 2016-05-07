@@ -113,6 +113,10 @@ public:
     );
   }
 
+  void dump() {
+    module->dump();
+  }
+
   /// Generates IR for all nodes in vector
   void visit( VectorNode aNode ) {
     for ( Node* node : aNode.getNodes() ) {
@@ -200,7 +204,12 @@ public:
       std::cout << "gen?: declared variable "
         << variable->getName() << std::endl;
     } else {
-      builder.CreateStore( operands.top(), alloca );
+      Value* rhs = operands.top();
+      if ( variable->getType() != aNode.getRHS()->getType() ) {
+        rhs = cast( rhs, aNode.getRHS()->getType(), variable->getType() );
+      }
+
+      builder.CreateStore( rhs, alloca );
       operands.pop();
 
       std::cout << "gen?: assigned variable"
@@ -312,8 +321,6 @@ public:
 
     // Dummy
     builder.CreateRet( ConstantInt::get( builder.getInt32Ty(), 0, false ) );
-
-    module->dump();
   }
 
   void visit( BlockStatementNode aNode ) {

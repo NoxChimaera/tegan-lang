@@ -1,6 +1,8 @@
 # hello
 func main() : int {
-  float foo = 1.6 * 6.5;
-  int bar = foo / 10;
-  print bar;
+  float foo = 5;
+  foo = 425 * foo;
+  print foo
 }
+
+# func main() : int print 42
