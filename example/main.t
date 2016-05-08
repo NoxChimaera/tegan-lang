@@ -2,6 +2,7 @@
 func add( int a, int b ) : int return a + b
 
 func main() : int {
-  print add( 20, 21 )
+  float foo = 20.9;
+  print add( foo, 22 )
   return 0
 }

@@ -29,7 +29,10 @@ private:
 
   std::map<std::string, Value*> scope;
   std::map<std::string, Value*> argScope;
+
   std::map<std::string, Function*> funcs;
+  std::map<std::string, FunctionDefNode*> astFuncs;
+  FunctionDefNode* currentFunc;
 
   Type* toLLVMType( TType aType ) {
     switch ( aType ) {
@@ -60,7 +63,6 @@ private:
       return aValue;
     }
 
-std::cout << "create cast" << std::endl;
     return builder.CreateCast(
       /*OpCode=*/ CastInst::getCastOpcode(
         /*Value=*/ aValue,
@@ -104,6 +106,8 @@ public:
     FunctionType* type = FunctionType::get( builder.getInt32Ty(), argsRef, true );
 
     print = module->getOrInsertFunction( "printf", type );
+
+    currentFunc = nullptr;
   }
 
   /**
@@ -309,20 +313,39 @@ public:
   */
   void visit( FuncallNode aNode ) {
     Function* func = funcs[ aNode.getName() ];
+    FunctionDefNode* ast = astFuncs[ aNode.getName() ];
+
     if ( func == NULL ) {
-      std::cout << "error" << std::endl;
+      std::cout << "undefined function " << aNode.getName() << std::endl;
       return;
     }
 
     std::vector<ExpressionNode*> args = aNode.getArgs();
+    std::vector<VarNode*> astArgs = ast->getArgs();
     std::vector<Value*> argsVal;
+
+    if (args.size() != astArgs.size()) {
+      std::cout << "excepted " << astArgs.size() << " arguments but given "
+        << args.size() << std::endl;
+      return;
+    }
+
+    int idx(0);
     for ( ExpressionNode* arg : args ) {
       arg->accept( (*this) );
-      argsVal.push_back( operands.top() );
+
+      Value* res = operands.top();
       operands.pop();
+
+      res = cast( res, arg->getType(), astArgs[ idx ]->getType() );
+      argsVal.push_back( res );
+
+      idx++;
     }
 
     Value* callInstr = builder.CreateCall( func, argsVal );
+    // TODO: cast
+
     operands.push( callInstr );
   }
 
@@ -336,10 +359,7 @@ public:
 
     std::vector<Type*> argsTy;
     std::vector<VarNode*> args = aNode.getArgs();
-    for (
-      std::vector<VarNode*>::iterator it = args.begin();
-      it != args.end(); ++it
-    ) {
+    for ( auto it = args.begin(); it != args.end(); ++it ) {
       argsTy.push_back( toLLVMType( (*it)->getType() ) );
     }
 
@@ -349,14 +369,17 @@ public:
     Function* func = Function::Create(
       funcType, Function::ExternalLinkage, aNode.getName(), module
     );
+
+    std::cout << "DEF " << aNode.getName() << std::endl;
     funcs[ aNode.getName() ] = func;
 
+    astFuncs[ aNode.getName() ] = new FunctionDefNode(
+      aNode.getName(), aNode.getArgs(), aNode.getBody(), aNode.getType()
+    );
+    currentFunc = &aNode;
+
     int idx(0);
-    for (
-      Function::arg_iterator arg = func->arg_begin();
-      idx != argsTy.size();
-      ++arg, ++idx
-    ) {
+    for ( auto arg = func->arg_begin(); idx != argsTy.size(); ++arg, ++idx ) {
       std::string argName = args[ idx ]->getName();
       arg->setName( argName );
       argScope[ argName ] = arg;
@@ -371,7 +394,6 @@ public:
   }
 
   void visit( BlockStatementNode aNode ) {
-    std::cout << "gen?: generating <block>" << std::endl;
     for ( StatementNode* node : aNode.getStatements() ) {
       node->accept( (*this) );
     }
@@ -425,7 +447,11 @@ public:
   */
   void visit( ReturnNode aNode ) {
     aNode.getSubexpr()->accept( (*this) );
-    builder.CreateRet( operands.top() );
+
+    Value* res = operands.top();
     operands.pop();
+
+    res = cast( res, aNode.getSubexpr()->getType(), currentFunc->getType() );
+    builder.CreateRet( res );
   }
 };
