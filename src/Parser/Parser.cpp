@@ -12,8 +12,8 @@ TType Parser::fromString( std::string aType ) {
     return TType::INTEGER;
   } else if ( aType == "float" ) {
     return TType::FLOAT;
-  } else if ( aType == "string" ) {
-    return TType::STRING;
+  } else if ( aType == "bool" ) {
+    return TType::BOOL;
   }
   return TType::UNDEFINED;
 }
@@ -255,7 +255,8 @@ BlockStatementNode* Parser::blockStatement() {
 AssignmentNode* Parser::assignment() {
   infoln( "debug?: parsing <assignment>" );
 
-  std::string name = current.getLexeme();
+  Token t = current;
+  std::string name = t.getLexeme();
 
   VarNode* lhs = scope[ name ];
 
@@ -269,6 +270,14 @@ AssignmentNode* Parser::assignment() {
     error( op.getLine(), "expression expected after `=`" );
     return NULL;
   }
+  if ( lhs->getType() == TType::BOOL && lhs->getType() != rhs->getType() ) {
+    error( t.getLine(), "expected boolean but given number" );
+    return nullptr;
+  }
+  if ( lhs->getType() != TType::BOOL && rhs->getType() == TType::BOOL ) {
+    error( t.getLine(), "expected number but given boolean" );
+    return nullptr;
+  }
 
   lexinfo( current );
   infoln( "debug!: parsed <assignment>" );
@@ -278,6 +287,8 @@ AssignmentNode* Parser::assignment() {
 // declaration := Type <variable> = <expression>
 AssignmentNode* Parser::declaration() {
   infoln( "debug?: parsing <declaration>" );
+
+  Token t = current;
 
   TType type = fromString( current.getLexeme() );
   if ( !is( next(), SYMBOL ) ) { return NULL; }
@@ -292,6 +303,14 @@ AssignmentNode* Parser::declaration() {
   if ( rhs == NULL ) {
     error( op.getLine(), "expression expected after `=`" );
     return NULL;
+  }
+  if ( type == TType::BOOL && type != rhs->getType() ) {
+    error( t.getLine(), "expected boolean but given number" );
+    return nullptr;
+  }
+  if ( type != TType::BOOL && rhs->getType() == TType::BOOL ) {
+    error( t.getLine(), "expected number but given boolean" );
+    return nullptr;
   }
 
   scope.insert( std::pair<std::string, VarNode*>( name, lhs ) );
@@ -330,9 +349,13 @@ ExpressionNode* Parser::lor() {
       error( t.getLine(), "expression expected after `" + op + "`" );
       return NULL;
     }
+    if ( lhs->getType() != TType::BOOL || rhs->getType() != TType::BOOL ) {
+      error( t.getLine(), "expected boolean but given number" );
+      return nullptr;
+    }
 
     return new BinaryNode(
-      TType::INTEGER, op, lhs, rhs
+      TType::BOOL, op, lhs, rhs
     );
   }
   return lhs;
@@ -353,9 +376,13 @@ ExpressionNode* Parser::land() {
       error( t.getLine(), "expression expected after `" + op + "`" );
       return NULL;
     }
+    if ( lhs->getType() != TType::BOOL || rhs->getType() != TType::BOOL ) {
+      error( t.getLine(), "expected boolean but given number" );
+      return nullptr;
+    }
 
     return new BinaryNode(
-      TType::INTEGER, op, lhs, rhs
+      TType::BOOL, op, lhs, rhs
     );
   }
   return lhs;
@@ -379,7 +406,7 @@ ExpressionNode* Parser::cmpeq() {
     }
 
     return new BinaryNode(
-      TType::INTEGER, op, lhs, rhs
+      TType::BOOL, op, lhs, rhs
     );
   }
   return lhs;
@@ -401,9 +428,13 @@ ExpressionNode* Parser::cmp() {
       error( t.getLine(), "expression expected after `" + op + "`" );
       return NULL;
     }
+    if ( lhs->getType() == TType::BOOL || rhs->getType() == TType::BOOL ) {
+      error( t.getLine(), "expected number but given boolean" );
+      return nullptr;
+    }
 
     return new BinaryNode(
-      TType::INTEGER, op, lhs, rhs
+      TType::BOOL, op, lhs, rhs
     );
   }
   return lhs;
@@ -424,6 +455,10 @@ ExpressionNode* Parser::additive() {
     if ( rhs == NULL ) {
       error( t.getLine(), "expression expected after `" + op + "`" );
       return NULL;
+    }
+    if ( lhs->getType() == TType::BOOL || rhs->getType() == TType::BOOL ) {
+      error( t.getLine(), "expected number but given boolean" );
+      return nullptr;
     }
 
     TType type = TType::INTEGER;
@@ -454,6 +489,10 @@ ExpressionNode* Parser::multiplicative() {
       error( t.getLine(), "expression expected after `" + op + "`" );
       return NULL;
     }
+    if ( lhs->getType() == TType::BOOL || rhs->getType() == TType::BOOL ) {
+      error( t.getLine(), "expected number but given boolean" );
+      return NULL;
+    }
 
     TType type = TType::INTEGER;
     if ( lhs->getType() == TType::FLOAT || rhs->getType() == TType::FLOAT ) {
@@ -479,6 +518,15 @@ ExpressionNode* Parser::unary() {
     ExpressionNode* exp = unary();
     if ( exp == NULL ) {
       error( t.getLine(), "expression expected after `" + op + "`" );
+      return NULL;
+    }
+
+    if ( current.getType() == NOT && exp->getType() != TType::BOOL ) {
+      error( t.getLine(), "expected boolean but given number" );
+      return NULL;
+    }
+    if ( current.getType() == ADD && exp->getType() == TType::BOOL ) {
+      error( t.getLine(), "expected number but given boolean" );
       return NULL;
     }
 
@@ -517,6 +565,7 @@ ExpressionNode* Parser::factor() {
 ExpressionNode* Parser::constant() {
   infoln( "debug?: parsing <constant>" );
   switch ( current.getType() ) {
+    case BOOL: return boolean();
     case INTEGER: return intgr();
     case FLOAT: return flt();
   }
@@ -587,6 +636,17 @@ std::vector<ExpressionNode*> Parser::funcallArgs() {
     else { return args; }
   }
   return args;
+}
+
+// boolean := Bool
+BooleanNode* Parser::boolean() {
+  infoln( "debug?: parsing <integer>" );
+  std::string value = current.getLexeme();
+  next();
+
+  return value == "True"
+    ? new BooleanNode( true )
+    : new BooleanNode( false );
 }
 
 // integer := Integer

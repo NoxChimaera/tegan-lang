@@ -16,6 +16,9 @@ void VarNode::accept( ASTVisitor& aVisitor ) {
 void FuncallNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
+void BooleanNode::accept( ASTVisitor& aVisitor ) {
+  aVisitor.visit( (*this) );
+}
 void IntegerNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }

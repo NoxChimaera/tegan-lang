@@ -69,6 +69,17 @@ public:
   void accept( ASTVisitor& aVisitor );
 };
 
+class BooleanNode : public ExpressionNode {
+private:
+  bool value;
+public:
+  BooleanNode( bool aValue ) : value( aValue) {
+    type = TType::BOOL;
+  }
+  bool getValue() { return value; }
+  void accept( ASTVisitor& aVisitor );
+};
+
 class IntegerNode : public ExpressionNode {
 private:
   int value;

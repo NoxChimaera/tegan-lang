@@ -36,6 +36,8 @@ private:
 
   Type* toLLVMType( TType aType ) {
     switch ( aType ) {
+      case TType::BOOL:
+        return builder.getInt1Ty();
       case TType::INTEGER:
         return builder.getInt32Ty();
       case TType::FLOAT:
@@ -164,6 +166,15 @@ public:
     }
   }
 
+  void visit( BooleanNode aNode ) {
+    Value* val = ConstantInt::get(
+      /*IntegerType=*/ builder.getInt1Ty(),
+      /*value=*/ aNode.getValue(),
+      /*isSigned*/ false
+    );
+    operands.push( val );
+  }
+
   /**
   Generates IR for integer
   \return Returns via stack I32 constant
@@ -285,6 +296,74 @@ public:
     return NULL;
   }
 
+  Value* birel( BinaryNode aNode ) {
+    TType lhsTy = aNode.getLHS()->getType();
+    TType rhsTy = aNode.getRHS()->getType();
+
+    aNode.getLHS()->accept( (*this) );
+    aNode.getRHS()->accept( (*this) );
+
+    Value* rhs = operands.top(); operands.pop();
+    Value* lhs = operands.top(); operands.pop();
+
+    std::string op = aNode.getOp();
+
+    if ( lhsTy  == TType::FLOAT || rhsTy == TType::FLOAT ) {
+      lhs = cast( lhs, lhsTy, TType::FLOAT );
+      rhs = cast( rhs, rhsTy, TType::FLOAT );
+
+      if ( op == "==" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_OEQ, lhs, rhs );
+      } else if ( op == "!=" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_ONE, lhs, rhs );
+      } else if (op == ">" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_OGT, lhs, rhs );
+      } else if ( op == "<" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_OLT, lhs, rhs );
+      } else if ( op == ">=" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_OGE, lhs, rhs );
+      } else if ( op == "<=" ) {
+        return builder.CreateFCmp( CmpInst::FCMP_OLE, lhs, rhs );
+      }
+    } else {
+      if ( op == "==" ) {
+        return builder.CreateICmp( CmpInst::ICMP_EQ, lhs, rhs );
+      } else if ( op == "!=" ) {
+        return builder.CreateICmp( CmpInst::ICMP_NE, lhs, rhs );
+      } else if (op == ">" ) {
+        return builder.CreateICmp( CmpInst::ICMP_SGT, lhs, rhs );
+      } else if ( op == "<" ) {
+        return builder.CreateICmp( CmpInst::ICMP_SLT, lhs, rhs );
+      } else if ( op == ">=" ) {
+        return builder.CreateICmp( CmpInst::ICMP_SGE, lhs, rhs );
+      } else if ( op == "<=" ) {
+        return builder.CreateICmp( CmpInst::ICMP_SLE, lhs, rhs );
+      }
+    }
+    return NULL;
+  }
+
+  Value* bilog( BinaryNode aNode ) {
+    TType lhsTy = aNode.getLHS()->getType();
+    TType rhsTy = aNode.getRHS()->getType();
+
+    aNode.getLHS()->accept( (*this) );
+    aNode.getRHS()->accept( (*this) );
+
+    Value* rhs = operands.top(); operands.pop();
+    Value* lhs = operands.top(); operands.pop();
+
+    std::string op = aNode.getOp();
+    if ( op == "&&" ) {
+      return builder.CreateAnd( lhs, rhs );
+    } else if ( op == "||" ) {
+      return builder.CreateOr( lhs, rhs );
+    } else if (op == "^" ) {
+      return builder.CreateXor( lhs, rhs );
+    }
+    return NULL;
+  }
+
   /**
   Generates IR for binary operation
   \return Returns via stack result of operation
@@ -292,9 +371,21 @@ public:
   void visit( BinaryNode aNode ) {
     std::string op = aNode.getOp();
 
-    if (op == "+" || op == "-" || op == "*" || op == "/") {
+    if ( op == "+" || op == "-" || op == "*" || op == "/" ) {
       Value* res = biarithmetic( aNode );
       if ( res == NULL ) { error( "unknown error" ); return; }
+      operands.push( res );
+    } else if (
+      op == "==" || op == "!="
+      || op == ">" || op == "<"
+      || op == ">=" || op == "<="
+    ) {
+      Value* res = birel( aNode );
+      if (res == NULL ) { error( "unknown error" ); return; }
+      operands.push( res );
+    } else if ( op == "&&" || op == "||" || op == "^" ) {
+      Value* res = bilog( aNode );
+      if (res == NULL ) { error( "unknown error" ); return; }
       operands.push( res );
     }
 
@@ -344,8 +435,6 @@ public:
     }
 
     Value* callInstr = builder.CreateCall( func, argsVal );
-    // TODO: cast
-
     operands.push( callInstr );
   }
 

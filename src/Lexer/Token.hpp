@@ -5,10 +5,10 @@ enum TokenType {
   ERROR_TOKEN,
 
   SYMBOL,
-  INTEGER, FLOAT,
+  INTEGER, FLOAT, BOOL,
 
   ADD, MUL,
-  LAND, LOR, NOT,
+  LAND, LOR, LXOR, NOT,
   ASSIGN,
   CMP, CMP_EQ,
 

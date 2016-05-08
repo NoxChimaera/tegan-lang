@@ -1,6 +1,6 @@
 enum class TType {
   UNDEFINED,
+  BOOL,
   INTEGER,
-  FLOAT,
-  STRING
+  FLOAT
 };

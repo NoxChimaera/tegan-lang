@@ -8,12 +8,12 @@ private:
     switch (aType) {
       case TType::UNDEFINED:
         return "undef";
+      case TType::BOOL:
+        return "bool";
       case TType::INTEGER:
         return "int";
       case TType::FLOAT:
         return "float";
-      case TType::STRING:
-        return "str";
     }
   }
 
@@ -30,15 +30,27 @@ public:
   void visit( DummyNode aNode ) {
     std::cout << " [dummy]";
   }
+
   // [<type> <name>]
   void visit( VarNode aNode ) {
     std::cout << " [" << show( aNode.getType() )
       << " " << aNode.getName() << "]";
   }
+  
   // [<value>I]
   void visit( IntegerNode aNode ) {
     std::cout << " [" << aNode.getValue() << "I]";
   }
+
+  // [True] or [False]
+  void visit( BooleanNode aNode ) {
+    if ( aNode.getValue() ) {
+      std::cout << " [True]";
+    } else {
+      std::cout << "[False]";
+    }
+  }
+
   // [<value>F]
   void visit( FloatNode aNode ) {
     std::cout << " ["<< aNode.getValue() << "F]";

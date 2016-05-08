@@ -25,8 +25,10 @@ std::string Token::showType( TokenType aType ) {
     case SYMBOL: return "SYMBOL";
     case INTEGER: return "INT";
     case FLOAT: return "FLOAT";
+    case BOOL: return "BOOL";
     case LAND: return "And";
     case LOR: return "Or";
+    case LXOR: return "Xor";
     case ADD: return "Add";
     case MUL: return "Mul";
     case ASSIGN: return "Assign";

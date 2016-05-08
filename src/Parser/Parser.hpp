@@ -98,6 +98,7 @@ private:
   ExpressionNode* factor();
   ExpressionNode* constant();
 
+  BooleanNode* boolean();
   IntegerNode* intgr();
   FloatNode* flt();
   VarNode* var();

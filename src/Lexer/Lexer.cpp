@@ -39,7 +39,9 @@ Token Lexer::identifierOrKeyword( char aBegin ) {
   if ( lexeme == "return" ) type = RETURN;
   if ( lexeme == "int" ) type = TYPE;
   if ( lexeme == "float" ) type = TYPE;
-  if ( lexeme == "string" ) type = TYPE;
+  if ( lexeme == "bool" ) type = TYPE;
+  if ( lexeme == "False" ) type = BOOL;
+  if ( lexeme == "True" ) type = BOOL;
   if ( lexeme == "print" ) type = IO_PRINT;
   if ( lexeme == "read" ) type = IO_READ;
 
