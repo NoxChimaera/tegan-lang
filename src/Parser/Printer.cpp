@@ -36,7 +36,7 @@ public:
     std::cout << " [" << show( aNode.getType() )
       << " " << aNode.getName() << "]";
   }
-  
+
   // [<value>I]
   void visit( IntegerNode aNode ) {
     std::cout << " [" << aNode.getValue() << "I]";
@@ -120,6 +120,14 @@ public:
       std::cout << " Else ";
       falseBranch->accept( (*this) );
     }
+    std::cout << " )";
+  }
+
+  // (While <expression> <statement>)
+  void visit( WhileStatementNode aNode ) {
+    std::cout << " (While ";
+    aNode.getCond()->accept( (*this) );
+    aNode.getBody()->accept( (*this) );
     std::cout << " )";
   }
 

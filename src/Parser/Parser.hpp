@@ -81,7 +81,10 @@ private:
 
   StatementNode* statement();
   BlockStatementNode* blockStatement();
+
   IfStatementNode* ifStatement();
+  WhileStatementNode* whileStmt();
+
   AssignmentNode* declaration();
   AssignmentNode* assignment();
   IoPrintNode* ioPrint();

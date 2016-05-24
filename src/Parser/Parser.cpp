@@ -147,6 +147,7 @@ StatementNode* Parser::statement() {
     }
     case BL: { return blockStatement(); }
     case IF: { return ifStatement(); }
+    case WHILE: { return whileStmt(); }
     case TYPE: {
       // <declaration>
       StatementNode* stmt = declaration();
@@ -208,7 +209,7 @@ IoPrintNode* Parser::ioPrint() {
   return new IoPrintNode( expr );
 }
 
-// if-stmt := If \( <expression : int> \) <statement>
+// if-stmt := If \( <expression : bool> \) <statement>
 //   ( Else <statement> )?
 IfStatementNode* Parser::ifStatement() {
   infoln( "debug?: parsing <if-stmt>" );
@@ -227,6 +228,22 @@ IfStatementNode* Parser::ifStatement() {
     return new IfStatementNode( cond, trueBranch, falseBranch );
   }
   return new IfStatementNode( cond, trueBranch );
+}
+
+// while-stmt := While <expression : bool> <statement>
+WhileStatementNode* Parser::whileStmt() {
+  infoln( "debug?: parsing <while-stmt>" );
+  Token t = current;
+  ExpressionNode* cond = expression();
+  if ( cond == nullptr ) { return nullptr; }
+  if ( cond->getType() != TType::BOOL ) {
+    error( t.getLine(), "expected boolean expression" );
+    return nullptr;
+  }
+  infoln( "debug?: parsing <while-stmt.body>" );
+  StatementNode* body = statement();
+  if ( body == nullptr ) { return nullptr; }
+  return new WhileStatementNode( cond, body );
 }
 
 // block := { <statement>* }

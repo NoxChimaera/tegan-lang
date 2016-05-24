@@ -1,11 +1,13 @@
 # hello
-func add( int a, int b ) : int return a + b
-
 func main() : int {
-  float foo = 42.5;
-  int bar = 42;
+  int i = -10;
+  while i <= 10 {
+    if i < 0 print -1
+    else if i > 0 print 1
+    else print 0
 
-  print foo > bar && foo < bar || True
-
+    i = i + 1
+  }
+  
   return 0
 }

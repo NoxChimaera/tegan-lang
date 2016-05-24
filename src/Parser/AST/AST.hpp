@@ -222,6 +222,20 @@ public:
   void accept( ASTVisitor& aVisitor );
 };
 
+class WhileStatementNode : public StatementNode {
+private:
+  ExpressionNode* cond;
+  StatementNode* body;
+public:
+  WhileStatementNode( ExpressionNode* aCond, StatementNode* aBody )
+    : cond( aCond ), body( aBody ) {
+    type = TType::UNDEFINED;
+  }
+  ExpressionNode* getCond() { return cond; }
+  StatementNode* getBody() { return body; }
+  void accept( ASTVisitor& aVisitor );
+};
+
 class FunctionDefNode : public Node {
 private:
   std::string name;

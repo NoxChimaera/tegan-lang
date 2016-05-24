@@ -77,6 +77,12 @@ private:
     std::cout << "created cast" << std::endl;
   }
 
+  Value* pop() {
+    Value* val = operands.top();
+    operands.pop();
+    return val;
+  }
+
 public:
   Codegen() : builder( getGlobalContext() ) {
     isSuccess = true;
@@ -388,14 +394,39 @@ public:
       if (res == NULL ) { error( "unknown error" ); return; }
       operands.push( res );
     }
+  }
 
+  Value* unarithmetic( UnaryNode aNode ) {
+    TType ty = aNode.getType();
+    aNode.getSubexpr()->accept( (*this) );
+    Value* val = pop();
+    if ( ty == TType::FLOAT ) {
+      return builder.CreateFNeg( val );
+    } else if ( ty == TType::INTEGER ) {
+      return builder.CreateNeg( val );
+    }
+    return nullptr;
+  }
+
+  Value* unlog( UnaryNode aNode ) {
+    aNode.getSubexpr()->accept( (*this) );
+    Value* val = pop();
+    return builder.CreateNot( val );
   }
 
   // (<operator> <subexpr>)
   void visit( UnaryNode aNode ) {
-    // std::cout << " (" << aNode.getOp() << " ";
-    // aNode.getSubexpr()->accept((*this));
-    // std::cout << ")";
+    std::string op = aNode.getOp();
+
+    if ( op == "-" ) {
+      Value* res = unarithmetic( aNode );
+      if ( res == NULL ) { error( "unknown error" ); return; }
+      operands.push( res );
+    } else if ( op == "!" ) {
+      Value* res = unlog( aNode );
+      if ( res == NULL ) { error( "unknown error" ); return; }
+      operands.push( res );
+    }
   }
 
   /**
@@ -490,15 +521,58 @@ public:
 
   // (If <expression> <statement> (Else <statement>)?
   void visit( IfStatementNode aNode ) {
-    // std::cout << " (If ";
-    // aNode.getCond()->accept((*this));
-    // aNode.getTrueBranch()->accept((*this));
-    // StatementNode* falseBranch = aNode.getFalseBranch();
-    // if (falseBranch != NULL) {
-    //   std::cout << " Else ";
-    //   falseBranch->accept((*this));
-    // }
-    // std::cout << " )";
+    Function* func = funcs[ currentFunc->getName() ];
+    aNode.getCond()->accept( (*this) );
+    Value* cond = pop();
+
+    BasicBlock* thenBb  = BasicBlock::Create( getGlobalContext(), "Then", func );
+    BasicBlock* elseBb  = BasicBlock::Create( getGlobalContext(), "Else" );
+    BasicBlock* mergeBb = BasicBlock::Create( getGlobalContext(), "Merge" );
+
+    builder.CreateCondBr( cond, thenBb, elseBb );
+    builder.SetInsertPoint( thenBb );
+
+    aNode.getTrueBranch()->accept( (*this) );
+    builder.CreateBr( mergeBb );
+    thenBb = builder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back( elseBb );
+    builder.SetInsertPoint( elseBb );
+
+    if ( aNode.getFalseBranch() ) {
+      aNode.getFalseBranch()->accept( (*this) );
+    }
+
+    builder.CreateBr( mergeBb );
+    elseBb = builder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back( mergeBb );
+    builder.SetInsertPoint( mergeBb );
+  }
+
+  void visit( WhileStatementNode aNode ) {
+    Function* func = funcs[ currentFunc->getName() ];
+
+    BasicBlock* loopBb  = BasicBlock::Create( getGlobalContext(), "Loop", func );
+    BasicBlock* thenBb  = BasicBlock::Create( getGlobalContext(), "Then" );
+    BasicBlock* afterBb = BasicBlock::Create( getGlobalContext(), "After" );
+
+    builder.CreateBr( loopBb );
+
+    builder.SetInsertPoint( loopBb );
+    aNode.getCond()->accept( (*this) );
+    Value* cond = pop();
+
+    builder.CreateCondBr( cond, thenBb, afterBb );
+    builder.SetInsertPoint( thenBb );
+    aNode.getBody()->accept( (*this) );
+    builder.CreateBr( loopBb );
+
+    func->getBasicBlockList().push_back( thenBb );
+    thenBb = builder.GetInsertBlock();
+
+    func->getBasicBlockList().push_back( afterBb );
+    builder.SetInsertPoint( afterBb );
   }
 
   // <expression>

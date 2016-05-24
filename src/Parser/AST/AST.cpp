@@ -46,6 +46,9 @@ void BlockStatementNode::accept( ASTVisitor& aVisitor ) {
 void IfStatementNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
+void WhileStatementNode::accept( ASTVisitor& aVisitor ) {
+  aVisitor.visit( (*this) );
+}
 void ExpressionWrapperNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
