@@ -24,6 +24,7 @@ public:
 
   virtual void visit( IfStatementNode aNode ) = 0;
   virtual void visit( WhileStatementNode aNode ) = 0;
+  virtual void visit( DoWhileStatementNode aNode ) = 0;
 
   virtual void visit( ExpressionWrapperNode aNode ) = 0;
 

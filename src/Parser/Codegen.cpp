@@ -575,6 +575,25 @@ public:
     builder.SetInsertPoint( afterBb );
   }
 
+  void visit( DoWhileStatementNode aNode ) {
+    std::cout << "do-while-stmt" << std::endl;
+    Function* func = funcs[ currentFunc->getName() ];
+
+    BasicBlock* loopBb = BasicBlock::Create( getGlobalContext(), "Loop", func );
+    BasicBlock* afterBb = BasicBlock::Create( getGlobalContext(), "After" );
+
+    builder.CreateBr( loopBb );
+
+    builder.SetInsertPoint( loopBb );
+    aNode.getBody()->accept( (*this) );
+    aNode.getCond()->accept( (*this) );
+    Value* cond = pop();
+    builder.CreateCondBr( cond, loopBb, afterBb );
+
+    func->getBasicBlockList().push_back( afterBb );
+    builder.SetInsertPoint( afterBb );
+  }
+
   // <expression>
   void visit( ExpressionWrapperNode aNode ) {
     // aNode.getExpr()->accept((*this));

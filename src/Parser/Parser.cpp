@@ -148,6 +148,7 @@ StatementNode* Parser::statement() {
     case BL: { return blockStatement(); }
     case IF: { return ifStatement(); }
     case WHILE: { return whileStmt(); }
+    case DO: { return doWhileStmt(); }
     case TYPE: {
       // <declaration>
       StatementNode* stmt = declaration();
@@ -244,6 +245,20 @@ WhileStatementNode* Parser::whileStmt() {
   StatementNode* body = statement();
   if ( body == nullptr ) { return nullptr; }
   return new WhileStatementNode( cond, body );
+}
+
+DoWhileStatementNode* Parser::doWhileStmt() {
+  infoln( "debug?: parsing <do-while-stmt>" );
+  Token t = current;
+  next();
+  StatementNode* body = statement();
+  if ( body == nullptr ) { return nullptr; }
+
+  infoln( "debug?: parsing <do-while-stmt.cond>" );
+  if ( !is( current, WHILE ) ) { return nullptr; }
+  ExpressionNode* cond = expression();
+  if ( cond == nullptr ) { return nullptr; }
+  return new DoWhileStatementNode( cond, body );
 }
 
 // block := { <statement>* }

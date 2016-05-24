@@ -84,6 +84,7 @@ private:
 
   IfStatementNode* ifStatement();
   WhileStatementNode* whileStmt();
+  DoWhileStatementNode* doWhileStmt();
 
   AssignmentNode* declaration();
   AssignmentNode* assignment();

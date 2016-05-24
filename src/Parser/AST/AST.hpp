@@ -236,6 +236,20 @@ public:
   void accept( ASTVisitor& aVisitor );
 };
 
+class DoWhileStatementNode : public StatementNode {
+private:
+  ExpressionNode* cond;
+  StatementNode* body;
+public:
+  DoWhileStatementNode( ExpressionNode* aCond, StatementNode* aBody )
+    : cond( aCond ), body( aBody ) {
+    type=  TType::UNDEFINED;
+  }
+  ExpressionNode* getCond() { return cond; }
+  StatementNode* getBody() { return body; }
+  void accept( ASTVisitor& aVisitor );
+};
+
 class FunctionDefNode : public Node {
 private:
   std::string name;

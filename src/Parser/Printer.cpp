@@ -131,6 +131,15 @@ public:
     std::cout << " )";
   }
 
+  // (Do <statement> While <expression>)
+  void visit( DoWhileStatementNode aNode ) {
+    std::cout << " (Do ";
+    aNode.getBody()->accept( (*this) );
+    std::cout << " While ";
+    aNode.getCond()->accept( (*this) );
+    std::cout << " )";
+  }
+
   // <expression>
   void visit( ExpressionWrapperNode aNode ) {
     aNode.getExpr()->accept( (*this) );

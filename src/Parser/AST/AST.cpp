@@ -49,6 +49,9 @@ void IfStatementNode::accept( ASTVisitor& aVisitor ) {
 void WhileStatementNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
+void DoWhileStatementNode::accept( ASTVisitor& aVisitor ) {
+  aVisitor.visit( (*this) );
+}
 void ExpressionWrapperNode::accept( ASTVisitor& aVisitor ) {
   aVisitor.visit( (*this) );
 }
