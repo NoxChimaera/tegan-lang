@@ -60,11 +60,6 @@ private:
   \return Cast instruction or Value (if types are equal)
   */
   Value* cast( Value* aValue, TType aFrom, TType aTo ) {
-    if ( aFrom == aTo ) {
-      std::cout << "from == to" << std::endl;
-      return aValue;
-    }
-
     return builder.CreateCast(
       /*OpCode=*/ CastInst::getCastOpcode(
         /*Value=*/ aValue,
@@ -143,7 +138,7 @@ public:
   }
 
   //// Do nothing
-  void visit(DummyNode aNode ) { }
+  void visit( DummyNode aNode ) { }
 
   /**
   Generates IR for variable
@@ -167,7 +162,7 @@ public:
     if ( isArg ) {
       operands.push( val );
     } else {
-      Value* loadInstr = builder.CreateLoad( val, aNode.getName() );
+      Value* loadInstr = builder.CreateLoad( val );
       operands.push( loadInstr );
     }
   }
@@ -452,7 +447,7 @@ public:
       return;
     }
 
-    int idx(0);
+    int idx( 0 );
     for ( ExpressionNode* arg : args ) {
       arg->accept( (*this) );
 
@@ -476,6 +471,7 @@ public:
     std::cout << "gen?: generating <function-definition>" << std::endl;
 
     scope.clear();
+    argScope.clear();
 
     std::vector<Type*> argsTy;
     std::vector<VarNode*> args = aNode.getArgs();

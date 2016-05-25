@@ -109,7 +109,7 @@ private:
 
 public:
   Parser() : current( EOF_TOKEN, 0, 0 ) {
-    isDebugMode = true;
+    isDebugMode = false;
     isSuccess = true;
     isError = false;
   }
