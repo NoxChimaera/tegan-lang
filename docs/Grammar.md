@@ -38,7 +38,7 @@
 - 'True' - BOOL('True'),
 - 'print' - IO_PRINT,
 - (:digit:)+ - INTEGER,
-- (:digit:)+\.(:digit:)+ - FLOAT
+- (:digit:)+\\.(:digit:)+ - FLOAT
 
 ## Синтаксис
 - `start := <program-stmt>*`,
