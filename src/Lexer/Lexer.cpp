@@ -193,7 +193,7 @@ Token Lexer::lex() {
     char next = fgetc( file );
     if ( next == '|' ) {
       col += 2;
-      return Token( LAND, "||", line, col - 2 );
+      return Token( LOR, "||", line, col - 2 );
     } else {
       col++;
       ungetc( next, file );
