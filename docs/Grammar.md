@@ -61,7 +61,7 @@
 - `cmp := <add> CMP <cmp> | <add>`,
 - `add := <mul> ADD <add> | <mul>`,
 - `mul := <unary> MUL <mul> | <unary>`,
-- `unary := ADD <unary> | NOT <unary> | <factor>`,
+- `unary := ADD('-') <unary> | NOT <unary> | <factor>`,
 - `factor := '('  <lor> ')' | <const> | <funcall> | SYMBOL`,
 - `const := BOOL | INTEGER | FLOAT`,
 - `funcall := SYMBOL '(' <funcall-args>? ')'`,
