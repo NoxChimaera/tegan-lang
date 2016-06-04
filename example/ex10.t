@@ -1,9 +1,8 @@
 func sign( int a ) : int {
-  if a >= 0
-    if a > 0 return 1
-    else return 0
-  else return -1
-  return 0
+  int res = 0
+  if a > 0 res = 1
+  else if a < 0 res = -1
+  return res
 }
 
 func main() : int {

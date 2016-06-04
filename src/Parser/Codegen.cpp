@@ -3,6 +3,10 @@
 #include <typeinfo>
 
 #include <llvm/IR/LLVMContext.h>
+
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Transforms/Scalar.h>
+
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
@@ -33,6 +37,8 @@ private:
   std::map<std::string, Function*> funcs;
   std::map<std::string, FunctionDefNode*> astFuncs;
   FunctionDefNode* currentFunc;
+
+  llvm::legacy::FunctionPassManager* passManager;
 
   Type* toLLVMType( TType aType ) {
     switch ( aType ) {
@@ -110,7 +116,34 @@ public:
 
     print = module->getOrInsertFunction( "printf", type );
 
+    passManager = new llvm::legacy::FunctionPassManager( module );
+
     currentFunc = nullptr;
+  }
+
+  void opt_instcombine() {
+    passManager->add( createInstructionCombiningPass() );
+    passManager->doInitialization();
+  }
+
+  void opt_reassociate() {
+    passManager->add( createReassociatePass() );
+    passManager->doInitialization();
+  }
+
+  void opt_dce() {
+    passManager->add( createDeadCodeEliminationPass() );
+    passManager->doInitialization();
+  }
+
+  void opt_gvn() {
+    passManager->add( createGVNPass() );
+    passManager->doInitialization();
+  }
+
+  void opt_simplifyCFG() {
+    passManager->add( createCFGSimplificationPass() );
+    passManager->doInitialization();
   }
 
   /**
@@ -446,7 +479,7 @@ public:
         << args.size() << std::endl;
       return;
     }
-
+    
     int idx( 0 );
     for ( ExpressionNode* arg : args ) {
       arg->accept( (*this) );
@@ -507,6 +540,8 @@ public:
     builder.SetInsertPoint( bb );
 
     aNode.getBody()->accept( (*this) );
+
+    passManager->run(*func);
   }
 
   void visit( BlockStatementNode aNode ) {

@@ -6,6 +6,36 @@
 #include "Parser/Codegen.cpp"
 #include "Parser/Parser.hpp"
 
+void addOpt( char* arg, Codegen cg ) {
+  if ( strcmp( "-O1", arg ) == 0 ) {
+    std::cout << "Optimization: instruction combining" << std::endl;
+    cg.opt_instcombine();
+  } else if ( strcmp( "-O2", arg ) == 0 ) {
+    std::cout << "Optimization: reassociate" << std::endl;
+    cg.opt_reassociate();
+  } else if ( strcmp( "-O3", arg ) == 0 ) {
+    std::cout << "Optimization: dead code elimination" << std::endl;
+    cg.opt_dce();
+  } else if ( strcmp( "-O4", arg ) == 0 ) {
+    std::cout << "Optimization: global value numbering" << std::endl;
+    cg.opt_gvn();
+  } else if ( strcmp( "-O5", arg ) == 0 ) {
+    std::cout << "Optimization: simplify CFG" << std::endl;
+    cg.opt_simplifyCFG();
+  } else if ( strcmp( "-Oall", arg ) == 0 ) {
+    std::cout << "Optimization: instruction combining, " << std::endl
+      << "\t reassociate, " << std::endl
+      << "\t dead code elimination, " << std::endl
+      << "\t global value numbering, " << std::endl
+      << "\t simplify CFG" << std::endl;
+    cg.opt_instcombine();
+    cg.opt_reassociate();
+    cg.opt_dce();
+    cg.opt_gvn();
+    cg.opt_simplifyCFG();
+  }
+}
+
 int main( int argc, char* argv[] ) {
   std::cout << "Tegan Language Compiler v.0.1"
     << std::endl<< std::endl << std::endl;
@@ -28,6 +58,10 @@ int main( int argc, char* argv[] ) {
 
   Printer printer = Printer();
   Codegen codegen = Codegen();
+
+  for ( int i = 3; i < argc; ++i ) {
+    addOpt( argv[ i ], codegen );
+  }
 
   if ( root != NULL ) {
     std::cout << std::endl;

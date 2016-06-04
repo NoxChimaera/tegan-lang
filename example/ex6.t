@@ -7,6 +7,6 @@ func sign( int a ) : int {
 }
 
 func main : int {
-  print sign( +10 )
+  print sign( 10 )
   return 0
 }
